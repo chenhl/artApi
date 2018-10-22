@@ -16,6 +16,7 @@ if (!defined('BASEPATH'))
 class Base_Controller extends CI_Controller {
 
     protected $_json = array();
+    protected $api_conf;
 
     public function __construct() {
         parent::__construct();
@@ -37,7 +38,7 @@ class Base_Controller extends CI_Controller {
             }
             $sign .= $key . $value;
         }
-        $sign .= 'secret';
+        $sign .= $this->api_conf['api_secret'];
         return hash("sha256", $sign);
     }
 

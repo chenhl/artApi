@@ -6,19 +6,31 @@ class Article extends Base_Controller {
 
     public function __construct() {
         parent::__construct();
+        $this->load->config('api');
+        $this->api_conf = $this->config->item('api_conf');
         $this->load->model(array('search'));
     }
-    
+
     /**
      * 文章feed列表
      */
     public function feed() {
+
         $post = $this->input->post();
+        if (!$this->chkSign($post)) {
+            $this->_json = array('code' => 500, 'msg' => 'fail', 'data' => array());
+            util::toJson($this->_json);
+        }
+
         $condition = array();
-        $condition['categoryId'] = 1;
-        $res = $this->search->getListFromSolor($condition);
+        $condition['q'] = isset($post['q']) ? $post['q'] : '';
+        $condition['categoryId'] = isset($post['categoryId']) ? $post['categoryId'] : 0;
+        $condition['categoryId'] = isset($post['categoryId']) ? $post['categoryId'] : 0;
+        $page = isset($post['page']) ? $post['page'] : 1;
+        $pageSize = isset($post['pageSize']) ? $post['pageSize'] : 20;
+        $res = $this->search->getListFromSolor($condition, $page, $pageSize);
         $this->_json['data'] = $res;
-        echo util::toJson($this->_json);
+        util::toJson($this->_json);
     }
 
 }
