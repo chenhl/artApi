@@ -11,5 +11,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |	https://codeigniter.com/user_guide/general/hooks.html
 |
 */
-$solr = array();
-$solr['url'] = $_SERVER['SOLR_URL'];
+$config['solr_conf'] = array(
+    'url' => $_SERVER['SOLR_URL'],
+);

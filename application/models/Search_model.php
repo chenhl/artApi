@@ -11,12 +11,11 @@
  *
  * @author Administrator
  */
-class Search extends Base_model {
-
-    private $solr_url;
+class Search_model extends Base_model {
 
     public function __construct() {
         parent::__construct();
+        $this->conSOLR();
     }
 
     /**

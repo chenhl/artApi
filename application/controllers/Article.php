@@ -8,7 +8,7 @@ class Article extends Base_Controller {
         parent::__construct();
         $this->load->config('api');
         $this->api_conf = $this->config->item('api_conf');
-        $this->load->model(array('search'));
+        $this->load->model(array('search_model'));
     }
 
     /**
@@ -28,7 +28,7 @@ class Article extends Base_Controller {
         $condition['categoryId'] = isset($post['categoryId']) ? $post['categoryId'] : 0;
         $page = isset($post['page']) ? $post['page'] : 1;
         $pageSize = isset($post['pageSize']) ? $post['pageSize'] : 20;
-        $res = $this->search->getListFromSolor($condition, $page, $pageSize);
+        $res = $this->search_model->getListFromSolor($condition, $page, $pageSize);
         $this->_json['data'] = $res;
         util::toJson($this->_json);
     }

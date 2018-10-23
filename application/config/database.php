@@ -74,12 +74,12 @@ $active_group = 'default';
 $query_builder = TRUE;
 
 $db['default'] = array(
-	'dsn'	=> '',
+	'dsn' => 'mysql:host=' . $_SERVER['MYSQL_HOST'] . ';port=' . $_SERVER['MYSQL_PORT'] . ';dbname=' . $_SERVER['MYSQL_DATABASE'],
 	'hostname' => $_SERVER['MYSQL_HOST'],
 	'username' => $_SERVER['MYSQL_USERNAME'],
 	'password' => $_SERVER['MYSQL_PASSWORD'],
 	'database' => $_SERVER['MYSQL_DATABASE'],
-	'dbdriver' => 'mysqli',
+	'dbdriver' => 'pdo',
 	'dbprefix' => '',
 	'pconnect' => FALSE,
 	'db_debug' => (ENVIRONMENT !== 'production'),

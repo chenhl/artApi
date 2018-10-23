@@ -6,7 +6,7 @@ class Category extends Base_Controller {
 
     public function __construct() {
         parent::__construct();
-        $this->load->model(array('search'));
+        $this->load->model(array('category_model'));
     }
 
     /**
@@ -15,8 +15,7 @@ class Category extends Base_Controller {
     public function getList() {
         $post = $this->input->post();
         $condition = array();
-        $condition['categoryId'] = 1;
-        $res = $this->search->getListFromSolor($condition);
+        $res = $this->category_model->getList($condition);
         $this->_json['data'] = $res;
         echo util::toJson($this->_json);
     }
