@@ -2,22 +2,22 @@
 
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Category extends Base_Controller {
+class Channel extends Base_Controller {
 
     public function __construct() {
         parent::__construct();
-        $this->load->model(array('category_model'));
+        $this->load->model(array('channel_model'));
     }
 
     /**
-     * 分类列表
+     * 频道列表
      */
-    public function getList() {
+    public function index() {
         $post = $this->input->post();
         $condition = array();
-        $res = $this->category_model->getList($condition);
+        $res = $this->channel_model->getList($condition);
         $this->_json['data'] = $res;
         echo util::toJson($this->_json);
     }
-    
+
 }

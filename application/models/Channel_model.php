@@ -11,7 +11,7 @@
  *
  * @author Administrator
  */
-class Category_model extends Base_model {
+class Channel_model extends Base_model {
 
     public function __construct() {
         parent::__construct();
@@ -19,23 +19,20 @@ class Category_model extends Base_model {
     }
 
     /**
-     * 分类列表
+     * 列表
      * @param type $condition
      * @return type
      */
     public function getList($condition = array()) {
 
-        $where = " type=0 ";
-        $param = array();
-        if (!empty($condition['catid'])) {
-            $where .= " and c.catid=:catid";
-            $param[':catid'] = $condition['catid'];
-        }
-        $order = ' order by listorder asc';
-        $query = 'select catid,catname,listorder from v9_category where ' . $where . $order;
-        $db = $this->db->conn_id->prepare($query);
-        $db->execute($param);
-        $return = $db->fetchAll(PDO::FETCH_ASSOC);
+        $return = array(
+            array('id' => 0, 'name' => '推荐', 'code' => 'all'),
+            array('id' => 1, 'name' => '热点', 'code' => 'news'),
+            array('id' => 2, 'name' => '人物', 'code' => 'artist'),
+            array('id' => 3, 'name' => '展览', 'code' => 'exhibit'),
+            array('id' => 4, 'name' => '画廊', 'code' => 'gallery'),
+            array('id' => 5, 'name' => '院校', 'code' => 'edu'),
+        );
         return $return;
     }
 
