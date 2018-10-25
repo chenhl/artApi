@@ -22,6 +22,8 @@ class Base_Controller extends CI_Controller {
         parent::__construct();
         $this->load->library(array("util"));
         $this->_json = array('code' => 200, 'msg' => 'success', 'data' => array());
+        $this->load->config('api');
+        $this->api_conf = $this->config->item('api_conf');
     }
 
     /**
@@ -54,6 +56,7 @@ class Base_Controller extends CI_Controller {
     protected function checkParam() {
         
     }
+
     /**
      * ajax公用返回信息
      * @param type $code

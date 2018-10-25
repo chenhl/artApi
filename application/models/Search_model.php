@@ -100,32 +100,52 @@ class Search_model extends Base_model {
     private function defData() {
 
         $data = '{
-  "id": 8480410,
-  "authorId": 22447533,
-  "authorName": "test",
-  "authorPic": "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/43feefdab91d46f2802c10d1f6102e71.jpeg",
+  "aid": 8608168,
+  "uid": 17101705,
+  "uname": "艺术家网",
+  "upic": "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/43feefdab91d46f2802c10d1f6102e71.jpeg",
   "focus": "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/43feefdab91d46f2802c10d1f6102e71.jpeg",
-  "picUrl": "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/43feefdab91d46f2802c10d1f6102e71.jpeg",
+  "image": "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/43feefdab91d46f2802c10d1f6102e71.jpeg",
   "images": [
     "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/43feefdab91d46f2802c10d1f6102e71.jpeg",
     "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/1981cb05d052486a9c21c44a4a0af049.jpeg",
     "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/5c811c4ee52e46618b1027a49bfdc979.jpeg",
     "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/4517eab8e5f04f119a67683b6d2788bf.jpeg"
   ],
-  "title": "test",
-  "mobileTitle": "test",
+  "title": "刚刚！云南省级机构改革首批6部门挂牌成立！",
+  "mobile_title": "刚刚！云南省级机构改革首批6部门挂牌成立！",
   "tags": [
     {
-      "id": 40810824,
+      "id": 90370113,
       "name": "书法"
+    },
+    {
+      "id": 90370113,
+      "name": "艺术家"
     }
   ],
-  "outerLink": "",
-  "categoryId": 76,
-  "categoryName": "",
-  "createTime": "Y-m-d H:i:s"
+  "outer_link": "",
+  "cate_id": 73,
+  "cate_name": "",
+  "create_time": "2018-10-24 10:11:13"
 }';
-        return array(json_decode($data, TRUE));
+        $arr = json_decode($data, TRUE);
+        $return = array();
+        for ($index = 0; $index < 10; $index++) {
+            $_tmp = $arr;
+            $_tmp['title'] = $arr['title'].$index;
+            $_tmp['mobile_title'] = $arr['mobile_title'].$index;
+            if($index == 1){
+                $_tmp['images'] = array();
+            }
+            if($index == 2){
+                $_tmp['image'] = '';
+                $_tmp['images'] = array();
+            }
+            $return[] = $_tmp;
+        }
+        return $return;
+//        return array(json_decode($data, TRUE));
     }
 
     private function _connect() {

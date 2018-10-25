@@ -6,8 +6,6 @@ class Article extends Base_Controller {
 
     public function __construct() {
         parent::__construct();
-        $this->load->config('api');
-        $this->api_conf = $this->config->item('api_conf');
         $this->load->model(array('search_model'));
     }
 
