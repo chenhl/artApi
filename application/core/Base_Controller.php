@@ -51,6 +51,9 @@ class Base_Controller extends CI_Controller {
         return !empty($request['api_sign']) ? ($request['api_sign'] == $this->genSign($request) ? TRUE : FALSE) : FALSE;
     }
 
+    protected function checkParam() {
+        
+    }
     /**
      * ajax公用返回信息
      * @param type $code

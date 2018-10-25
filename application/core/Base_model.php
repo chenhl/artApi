@@ -35,6 +35,48 @@ class Base_model extends CI_Model {
     }
 
     /**
+     * PDO 单表添加数据 支持批量
+     * @param $fields 
+     * @param array $data 添加的数据 array(array(field=>value))
+     */
+    protected function pdo_insert($data, $table) {
+        //字段值
+        $values_sql = array();
+        if ($data[0]) {
+            
+            $fields = array_keys($data[0]);
+            
+            foreach ($data as $key => $val) {
+                $value = array();
+                foreach ($val as $field => $v) {
+                    $_val_key = ':' . $field . $key;
+                    $value[] = $_val_key;
+                    $param[$_val_key] = $v;
+                }
+                $values_sql[] = '(' . join(',', $value) . ')';
+            }
+        } else {
+            
+            $fields = array_keys($data);
+            
+            $value = array();
+            foreach ($data as $key => $val) {
+                $_val_key = ':' . $key;
+                $value[] = $_val_key;
+                $param[$_val_key] = $val;
+            }
+            $values_sql[] = '(' . join(',', $value) . ')';
+        }
+        //字段名
+        $fields_sql = '`' . implode('`,`', $fields) . '`';
+
+        $query = "INSERT INTO " . $table . "(" . $fields_sql . ") VALUES " . implode(',', $values_sql);
+        $db = $this->db->conn_id->prepare($query);
+        $db->execute($param);
+        return $this->db->conn_id->lastInsertId();
+    }
+
+    /**
      * PDO 开启事务
      */
     public function begin_transaction() {

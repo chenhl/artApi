@@ -57,10 +57,9 @@ class Search_model extends Base_model {
             $param['fq'][] = 'fq=categoryId:' . $condition['categoryId'];
         }
         //author
-        if (!empty($condition['authorId'])) {
-            $param['fq'][] = 'fq=authorId:' . $condition['authorId'];
+        if (!empty($condition['ud'])) {
+            $param['fq'][] = 'fq=uid:' . $condition['uid'];
         }
-
         //返回facet
         if ($facet_return) {
             $facets = array();
