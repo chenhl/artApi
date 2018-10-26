@@ -90,14 +90,14 @@ class Search_model extends Base_model {
         $uri .= $param['sort'];
         $uri .= $param['start'] . $param['rows'];
 
-        return $this->defData();
+        return $this->mockFeed();
 //        $this->load->library(array("lib_curl"));
 //        $res = Lib_curl::httpRequest($this->solr_url, $uri);
 //        $return = json_decode($res, TRUE);
 //        return $return;
     }
 
-    private function defData() {
+    private function mockFeed() {
 
         $data = '{
   "aid": 8608168,
@@ -133,12 +133,12 @@ class Search_model extends Base_model {
         $return = array();
         for ($index = 0; $index < 10; $index++) {
             $_tmp = $arr;
-            $_tmp['title'] = $arr['title'].$index;
-            $_tmp['mobile_title'] = $arr['mobile_title'].$index;
-            if($index == 1){
+            $_tmp['title'] = $arr['title'] . $index;
+            $_tmp['mobile_title'] = $arr['mobile_title'] . $index;
+            if ($index == 1) {
                 $_tmp['images'] = array();
             }
-            if($index == 2){
+            if ($index == 2) {
                 $_tmp['image'] = '';
                 $_tmp['images'] = array();
             }
@@ -148,9 +148,33 @@ class Search_model extends Base_model {
 //        return array(json_decode($data, TRUE));
     }
 
-    private function _connect() {
+    public function getDetail($condition) {
+        return $this->mockDetail();
+    }
 
-        $this->solr_url;
+    private function mockDetail() {
+
+        $data = '{
+  "aid": 6093075,
+  "ud": 7669697,
+  "uname": "authorName",
+  "upic": "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/43feefdab91d46f2802c10d1f6102e71.jpeg",
+  "title": "刚刚！云南省级机构改革首批6部门挂牌成立！",
+  "mobile_title": "刚刚！云南省级机构改革首批6部门挂牌成立！",
+  "tags": [
+    {
+      "id": 19031,
+      "name": "艺术家"
+    }
+  ],
+  "cate_id": "111",
+  "cate_name": "news",
+  "content": "刚刚！云南省级机构改革首批6部门挂牌成立！刚刚！云南省级机构改革首批6部门挂牌成立！刚刚！云南省级机构改革首批6部门挂牌成立！刚刚！云南省级机构改革首批6部门挂牌成立！刚刚！云南省级机构改革首批6部门挂牌成立！",
+  "create_time": "2018-10-24 10:11:13"
+}';
+        $return = json_decode($data, TRUE);
+        return $return;
+//        return array(json_decode($data, TRUE));
     }
 
 }

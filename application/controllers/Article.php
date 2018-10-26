@@ -31,4 +31,22 @@ class Article extends Base_Controller {
         util::toJson($this->_json);
     }
 
+    /**
+     * 文章内容
+     */
+    public function detail() {
+
+        $post = $this->input->post();
+        if (!$this->chkSign($post)) {
+            $this->_json = array('code' => 500, 'msg' => 'fail', 'data' => array());
+            util::toJson($this->_json);
+        }
+
+        $condition = array();
+        $condition['aid'] = $post['aid'];
+        $res = $this->search_model->getDetail($condition);
+        $this->_json['data'] = $res;
+        util::toJson($this->_json);
+    }
+
 }
