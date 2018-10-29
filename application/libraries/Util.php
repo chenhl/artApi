@@ -33,4 +33,37 @@ class Util {
 //        return json_decode(urldecode(htmlspecialchars_decode($json_str)), $assoc);
     }
 
+    /**
+     * 设置加密的密码
+     * @param str $pwd 待加密的密码
+     * @param str $key 密钥
+     */
+    public static function password($pwd) {
+        $password_key = 'art';
+        return md5($pwd . $password_key);
+    }
+
+    /**
+     * 对用户的密码进行加密
+     * @param $password
+     * @param $encrypt //传入加密串，在修改密码时做认证
+     * @return array/password
+     */
+    public static function setPassWord($password, $encrypt = '') {
+        $pwd = array();
+        $password_key = 'art';
+        $pwd['encrypt'] = $encrypt ? $encrypt : self::create_randomstr();
+        $pwd['password'] = md5(md5(trim($password)) . $pwd['encrypt'].$password_key);
+        return $encrypt ? $pwd['password'] : $pwd;
+    }
+
+    /**
+     * 生成随机字符串
+     * @param string $lenth 长度
+     * @return string 字符串
+     */
+    public static function create_randomstr($lenth = 6) {
+        return random($lenth, '123456789abcdefghijklmnpqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ');
+    }
+
 }
