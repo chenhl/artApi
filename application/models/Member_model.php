@@ -19,6 +19,31 @@ class Member_model extends Base_model {
     }
 
     /**
+     * 我的关注列表
+     * @param type $condition
+     * @param type $page
+     * @param type $pageSize
+     */
+    public function getFollowList($condition, $page = 1, $pageSize = 20) {
+        $where = " m.islock=0 ";
+        $param = array();
+
+        $where .= " and m.userid=:userid";
+        $param[':userid'] = $condition['uid'];
+
+        $fields = 'm.userid as uid,m.nickname as uname,m.userpic as upic';
+        $query = 'select ' . $fields
+                . ' from art_follow as f'
+                . ' left join v9_member as m on m.userid=f.fuid'
+                . ' where ' . $where;
+        $db = $this->db->conn_id->prepare($query);
+        $db->execute($param);
+        $return = $db->fetch(PDO::FETCH_ASSOC);
+
+        return $return;
+    }
+
+    /**
      * 注册
      * @param type $data
      * @return type
