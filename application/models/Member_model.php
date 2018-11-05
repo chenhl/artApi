@@ -24,22 +24,33 @@ class Member_model extends Base_model {
      * @param type $page
      * @param type $pageSize
      */
-    public function getFollowList($condition, $page = 1, $pageSize = 20) {
+    public function getFollowList($condition, $page, $pageSize, $type = 'list') {
         $where = " m.islock=0 ";
         $param = array();
 
-        $where .= " and m.userid=:userid";
+//        $where .= " and m.userid=:userid";
+//        $param[':userid'] = $condition['uid'];
+
+        $where .= " and f.fuid=:userid";
         $param[':userid'] = $condition['uid'];
 
-        $fields = 'm.userid as uid,m.nickname as uname,m.userpic as upic';
-        $query = 'select ' . $fields
-                . ' from art_follow as f'
-                . ' left join v9_member as m on m.userid=f.fuid'
-                . ' where ' . $where;
-        $db = $this->db->conn_id->prepare($query);
-        $db->execute($param);
-        $return = $db->fetch(PDO::FETCH_ASSOC);
-
+        if ($type == 'list') {
+            $limit = 'limit ' . ($page - 1) * $pageSize . ',' . $pageSize;
+            $fields = 'm.userid as uid,m.nickname as uname,m.userpic as upic';
+            $query = 'select ' . $fields
+                    . ' from art_follow as f'
+                    . ' left join v9_member as m on m.userid=f.fuid'
+                    . ' where ' . $where . $limit;
+            $db = $this->db->conn_id->prepare($query);
+            $db->execute($param);
+            $return = $db->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            $query = 'select count(fuid) as total from art_follow as f '
+                    . 'where' . $where;
+            $db = $this->db->conn_id->prepare($query);
+            $db->execute($param);
+            $return = $db->fetch(PDO::FETCH_ASSOC);
+        }
         return $return;
     }
 
