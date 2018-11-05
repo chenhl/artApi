@@ -60,6 +60,16 @@ class Search_model extends Base_model {
         if (!empty($condition['ud'])) {
             $param['fq'][] = 'fq=uid:' . $condition['uid'];
         }
+
+        //文章id 单个
+        if (!empty($condition['aid'])) {
+            $param['fq'][] = 'fq=aid:' . $condition['aid'];
+        }
+        //多个
+        if (!empty($condition['aids'])) {
+            $param['fq'][] = 'fq=aid:(' . join('+OR+', $condition['aids']) . ')';
+        }
+
         //返回facet
         if ($facet_return) {
             $facets = array();
@@ -90,7 +100,12 @@ class Search_model extends Base_model {
         $uri .= $param['sort'];
         $uri .= $param['start'] . $param['rows'];
 
-        return $this->mockFeed();
+        $data = $this->mockFeed();
+
+        return array(
+            'total' => 20,
+            'list' => $data,
+        );
 //        $this->load->library(array("lib_curl"));
 //        $res = Lib_curl::httpRequest($this->solr_url, $uri);
 //        $return = json_decode($res, TRUE);

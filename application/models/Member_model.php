@@ -13,6 +13,9 @@
  */
 class Member_model extends Base_model {
 
+    private $follow_max = 400;
+    private $collect_max = 1000;
+
     public function __construct() {
         parent::__construct();
         $this->conDB();
@@ -24,18 +27,32 @@ class Member_model extends Base_model {
      * @param type $page
      * @param type $pageSize
      */
-    public function getFollowList($condition, $page, $pageSize, $type = 'list') {
-        $where = " m.islock=0 ";
+    public function getFollowList($condition, $page, $pageSize) {
         $param = array();
-
-//        $where .= " and m.userid=:userid";
-//        $param[':userid'] = $condition['uid'];
-
-        $where .= " and f.fuid=:userid";
+        $where = ' f.uid=:userid';
         $param[':userid'] = $condition['uid'];
 
-        if ($type == 'list') {
-            $limit = 'limit ' . ($page - 1) * $pageSize . ',' . $pageSize;
+        $return = array();
+        //统计最多关注 400个;
+
+        $query = 'select count(fuid) as total from art_follow as f '
+                . 'where' . $where;
+        $db = $this->db->conn_id->prepare($query);
+        $db->execute($param);
+        $count = $db->fetch(PDO::FETCH_ASSOC);
+        if ($this->follow_max && $count['total'] > $this->follow_max) {
+            $return['total'] = $this->follow_max;
+        } else {
+            $return['total'] = $count['total'];
+        }
+
+        //内容
+        $start = ($page - 1) * $pageSize;
+        if ($this->follow_max && $start > $this->follow_max) {
+            $return['list'] = array();
+        } else {
+            $where .= ' m.islock=0 ';
+            $limit = 'limit ' . $start . ',' . $pageSize;
             $fields = 'm.userid as uid,m.nickname as uname,m.userpic as upic';
             $query = 'select ' . $fields
                     . ' from art_follow as f'
@@ -43,14 +60,9 @@ class Member_model extends Base_model {
                     . ' where ' . $where . $limit;
             $db = $this->db->conn_id->prepare($query);
             $db->execute($param);
-            $return = $db->fetchAll(PDO::FETCH_ASSOC);
-        } else {
-            $query = 'select count(fuid) as total from art_follow as f '
-                    . 'where' . $where;
-            $db = $this->db->conn_id->prepare($query);
-            $db->execute($param);
-            $return = $db->fetch(PDO::FETCH_ASSOC);
+            $return['list'] = $db->fetchAll(PDO::FETCH_ASSOC);
         }
+
         return $return;
     }
 

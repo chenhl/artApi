@@ -23,10 +23,10 @@ class Article extends Base_Controller {
         $condition = array();
         $condition['q'] = isset($post['q']) ? $post['q'] : '';
         $condition['categoryId'] = isset($post['categoryId']) ? $post['categoryId'] : 0;
-        $condition['categoryId'] = isset($post['categoryId']) ? $post['categoryId'] : 0;
         $page = isset($post['page']) ? $post['page'] : 1;
         $pageSize = isset($post['pageSize']) ? $post['pageSize'] : 20;
         $res = $this->search_model->getListFromSolor($condition, $page, $pageSize);
+        
         $this->_json['data'] = $res;
         util::toJson($this->_json);
     }
