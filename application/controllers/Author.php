@@ -42,11 +42,31 @@ class Author extends Base_Controller {
             $this->_json = array('code' => 500, 'msg' => 'fail', 'data' => array());
             util::toJson($this->_json);
         }
-        $this->load->model(array('collection_model'));
         $data = array();
-        $data['aid'] = $post['aid'];
+        $data['fuid'] = $post['fuid'];
         $data['uid'] = $post['uid'];
-        if ($this->collection_model->add($data)) {
+        if ($this->member_model->addFollow($data)) {
+            $this->_json['data'] = TRUE;
+        } else {
+            $this->_json['data'] = FALSE;
+        }
+        echo util::toJson($this->_json);
+    }
+
+    /**
+     * 取消关注
+     */
+    public function cancel() {
+        $post = $this->input->post();
+        if (!$this->chkSign($post)) {
+            $this->_json = array('code' => 500, 'msg' => 'fail', 'data' => array());
+            util::toJson($this->_json);
+        }
+
+        $data = array();
+        $data['fuid'] = $post['fuid'];
+        $data['uid'] = $post['uid'];
+        if ($this->member_model->cancelFollow($data)) {
             $this->_json['data'] = TRUE;
         } else {
             $this->_json['data'] = FALSE;

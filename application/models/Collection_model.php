@@ -13,7 +13,9 @@
  */
 class Collection_model extends Base_model {
 
-    private $table='art_collection';
+    private $table = 'art_collection';
+    private $collect_max = 1000;
+
     public function __construct() {
         parent::__construct();
         $this->conDB();
@@ -25,17 +27,71 @@ class Collection_model extends Base_model {
      * @return type
      */
     public function add($data) {
-        return $this->pdo_insert($data, $this->table);
+        $insert_data = array();
+        $insert_data['uid'] = $data['uid'];
+        $insert_data['aid'] = $data['aid'];
+        $insert_data['create_time'] = Util::genHttpDateTime();
+
+        return $this->pdo_insert($insert_data, $this->table);
     }
+
+    /**
+     * 取消收藏
+     * @param type $data
+     */
+    public function cancel($data) {
+        $sql = 'delete from ' . $this->table . ' where uid = ' . intval($data['uid'])
+                . ' and fuid=' . intval($data['fuid']);
+        return $this->query($sql);
+    }
+
     /**
      * 收藏列表
      * @param type $condition
      * @return type
      */
-    public function getList($condition = array()) {
-            
-    }
+    public function getList($condition, $page, $pageSize) {
+        $param = array();
+        $where = ' c.uid=:userid';
+        $param[':userid'] = $condition['uid'];
 
-    
+        $return = array();
+        //统计最多关注 1000个;
+        $query = 'select count(aid) as total from ' . $this->table . ' as c '
+                . 'where' . $where;
+        $db = $this->db->conn_id->prepare($query);
+        $db->execute($param);
+        $count = $db->fetch(PDO::FETCH_ASSOC);
+        if ($this->collect_max && $count['total'] > $this->collect_max) {
+            $return['total'] = $this->collect_max;
+        } else {
+            $return['total'] = $count['total'];
+        }
+
+        //内容
+        $start = ($page - 1) * $pageSize;
+        if ($this->collect_max && $start > $this->collect_max) {
+            $return['list'] = array();
+        } else {
+            $limit = 'limit ' . $start . ',' . $pageSize;
+            $query = 'select aid '
+                    . ' from ' . $this->table . ' as c '
+                    . ' where ' . $where . $limit;
+            $db = $this->db->conn_id->prepare($query);
+            $db->execute($param);
+            $_data = $db->fetchAll(PDO::FETCH_ASSOC);
+            if ($_data) {
+                $aids = array_column($_data, 'aid');
+                //查询文章数据
+                $this->load->model(array('search_model'));
+                $condition_search = array();
+                $condition_search['aids'] = $aids;
+                $res = $this->search_model->getListFromSolor($condition, $page, $pageSize);
+                $return['list'] = $res['docs'];
+            }
+        }
+
+        return $return;
+    }
 
 }

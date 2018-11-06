@@ -14,7 +14,7 @@
 class Member_model extends Base_model {
 
     private $follow_max = 400;
-    private $collect_max = 1000;
+    
 
     public function __construct() {
         parent::__construct();
