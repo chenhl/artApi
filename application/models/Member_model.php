@@ -67,6 +67,29 @@ class Member_model extends Base_model {
     }
 
     /**
+     * 添加关注
+     * @param type $data
+     */
+    public function addFollow($data) {
+
+        $insert_data = array();
+        $insert_data['uid'] = $data['uid'];
+        $insert_data['fuid'] = $data['fuid'];
+        $insert_data['create_time'] = Util::genHttpDateTime();
+        return $this->pdo_insert($data, 'art_follow');
+    }
+
+    /**
+     * 取消关注
+     * @param type $data
+     */
+    public function cancelFollow($data) {
+        $sql = 'delete from art_follow where uid = '. intval($data['uid'])
+                .' and fuid='. intval($data['fuid']);
+        return $this->query($sql);
+    }
+
+    /**
      * 注册
      * @param type $data
      * @return type
