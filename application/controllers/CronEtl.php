@@ -19,7 +19,7 @@ class CronEtl extends Base_Controller {
 
     public function __construct() {
         parent::__construct();
-        $this->load->model(array('article_model'));
+        $this->load->model(array('article_model', 'category_model'));
     }
 
     private function _init() {
@@ -69,8 +69,14 @@ class CronEtl extends Base_Controller {
      * @return type
      */
     private function _getCate() {
-
-        return array();
+        $data = $this->category_model->getList();
+        $return = array();
+        if ($data) {
+            foreach ($data as $row) {
+                $return[$row['catid']] = $row;
+            }
+        }
+        return $return;
     }
 
     /**
@@ -105,7 +111,7 @@ class CronEtl extends Base_Controller {
 
             $_temp['channel'] = $channel;
             $_temp['cate_id'] = $row['catid'];
-            $_temp['cate_name'] = $this->cate_info[$row['catid']]['name'];
+            $_temp['cate_name'] = $this->cate_info[$row['catid']]['catname'];
 
             $_temp['collection_num'] = $row['collection_num'] ? $row['collection_num'] : 0;
             $_temp['comment_num'] = $row['comment_num'] ? $row['comment_num'] : 0;

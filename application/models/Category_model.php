@@ -32,7 +32,7 @@ class Category_model extends Base_model {
             $param[':catid'] = $condition['catid'];
         }
         $order = ' order by listorder asc';
-        $query = 'select catid,catname,listorder from v9_category where ' . $where . $order;
+        $query = 'select catid,catname,listorder,modelid,letter,catdir from v9_category where ' . $where . $order;
         $db = $this->db->conn_id->prepare($query);
         $db->execute($param);
         $return = $db->fetchAll(PDO::FETCH_ASSOC);
