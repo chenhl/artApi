@@ -31,7 +31,7 @@ class Search_model extends Base_model {
         $param = array();
         //默认条件
         $param['fq'] = array();
-        $param['fq'][] = 'fq=is_deleted:0';
+        $param['fq'][] = 'fq=status:99';
         //返回字段
         $param['fl'] = '&fl=*';
         //默认查询字段
