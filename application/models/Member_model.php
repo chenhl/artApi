@@ -14,7 +14,6 @@
 class Member_model extends Base_model {
 
     private $follow_max = 400;
-    
 
     public function __construct() {
         parent::__construct();
@@ -84,8 +83,8 @@ class Member_model extends Base_model {
      * @param type $data
      */
     public function cancelFollow($data) {
-        $sql = 'delete from art_follow where uid = '. intval($data['uid'])
-                .' and fuid='. intval($data['fuid']);
+        $sql = 'delete from art_follow where uid = ' . intval($data['uid'])
+                . ' and fuid=' . intval($data['fuid']);
         return $this->query($sql);
     }
 
@@ -145,6 +144,61 @@ class Member_model extends Base_model {
             return FALSE;
         }
         return $return;
+    }
+
+    /**
+     * 登录
+     * @param type $data
+     * @return type
+     */
+    public function doAuth($data) {
+
+        //判断用户是否存在
+        $param = array();
+        if (is_numeric($data['login_name'])) {
+            $where = ' m.mobile=:login_name';
+        } else {
+            $where = ' m.email=:login_name';
+        }
+        $param[':login_name'] = $data['login_name'];
+
+        $query = 'select * from v9_member as m where ' . $where;
+        $db = $this->db->conn_id->prepare($query);
+        $db->execute($param);
+        $userInfo = $db->fetch(PDO::FETCH_ASSOC);
+
+        if (!empty($userInfo)) {
+            //存在，登录
+            //一：禁止登录
+            if (!empty($userInfo['islock'])) {
+                return array(
+                    'islock' => $userInfo['islock']
+                );
+            }
+            return $userInfo;
+        } else {
+            //不存在
+            //注册
+            return $this->_insert_member($data);
+        }
+    }
+
+    /**
+     * 整理auth信息成member信息
+     * @param type $param
+     */
+    private function _formatAuth($param) {
+
+        return $param;
+    }
+    /**
+     * 入库member
+     * @param type $data
+     * @return type
+     */
+    private function _insert_member($data) {
+        $insert_data = $this->_formatAuth($data);
+        return $this->pdo_insert($insert_data, 'v9_member');
     }
 
 }

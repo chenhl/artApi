@@ -14,7 +14,7 @@ class Member extends Base_Controller {
     /**
      * 登录
      */
-    public function login() {
+    public function auth() {
         $post = $this->input->post();
         if (!$this->chkSign($post)) {
             $this->_json = array('code' => 500, 'msg' => 'fail', 'data' => array());
@@ -23,7 +23,7 @@ class Member extends Base_Controller {
         
         $data = $post;
         
-        $res = $this->member_model->doLogin($data);
+        $res = $this->member_model->doAuth($data);
         $this->_json['data'] = $res;
         echo util::toJson($this->_json);
     }
