@@ -20,6 +20,9 @@ class Base_Controller extends CI_Controller {
 
     public function __construct() {
         parent::__construct();
+        if(is_cli()){
+            
+        }
         $this->load->library(array("util"));
         $this->_json = array('code' => 200, 'msg' => 'success', 'data' => array());
         $this->load->config('api');

@@ -77,7 +77,7 @@ $db['default'] = array(
 	'dsn' => 'mysql:host=' . $_SERVER['MYSQL_HOST'] . ';port=' . $_SERVER['MYSQL_PORT'] . ';dbname=' . $_SERVER['MYSQL_DATABASE'],
 	'hostname' => $_SERVER['MYSQL_HOST'],
 	'username' => $_SERVER['MYSQL_USERNAME'],
-	'password' => $_SERVER['MYSQL_PASSWORD'],
+	'password' => trim($_SERVER['MYSQL_PASSWORD']),
 	'database' => $_SERVER['MYSQL_DATABASE'],
 	'dbdriver' => 'pdo',
 	'dbprefix' => '',

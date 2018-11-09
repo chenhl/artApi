@@ -15,10 +15,13 @@ class CronEtl extends Base_Controller {
 
     private $cate_info = array();
     private $area_info = array();
-    private $xml_dir = '/data/solr/xml/';
+    private $xml_dir = FCPATH . 'xml/';
 
     public function __construct() {
         parent::__construct();
+        if (!is_cli()) {
+            exit;
+        }
         $this->load->model(array('article_model', 'category_model'));
     }
 
@@ -34,12 +37,13 @@ class CronEtl extends Base_Controller {
      */
     public function full_import() {
 //        $domain = 'www-test.babyonlinedress.cn';
+        
         $this->_init();
         //文章
         $_data = $this->article_model->etl_article();
         //机构（）
 
-        $data = $this->_parseData($_data);
+        $data = $this->_parseData($_data,'news');
         $this->_parse2addxml($data);
     }
 
@@ -113,9 +117,9 @@ class CronEtl extends Base_Controller {
             $_temp['cate_id'] = $row['catid'];
             $_temp['cate_name'] = $this->cate_info[$row['catid']]['catname'];
 
-            $_temp['collection_num'] = $row['collection_num'] ? $row['collection_num'] : 0;
-            $_temp['comment_num'] = $row['comment_num'] ? $row['comment_num'] : 0;
-            $_temp['like_num'] = $row['like_num'] ? $row['like_num'] : 0;
+            $_temp['collect_num'] = isset($row['collect_num']) ? $row['collect_num'] : 0;
+            $_temp['comment_num'] = isset($row['comment_num']) ? $row['comment_num'] : 0;
+            $_temp['like_num'] = isset($row['like_num']) ? $row['like_num'] : 0;
 
             $_temp['create_time'] = date("Y-m-d\TH:i:s\Z", strtotime($row['create_time']));
             $_temp['update_time'] = date("Y-m-d\TH:i:s\Z", strtotime($row['update_time']));
@@ -126,8 +130,8 @@ class CronEtl extends Base_Controller {
             $_temp['content'] = !empty($row['content_search']) ? $row['content_search'] : strip_tags($row['content']);
 
             $_temp['focuspic'] = isset($row['focuspic']) ? $row['focuspic'] : '';
-            $_temp['image'] = $row['image'];
-            $_temp['images'] = $row['images'];
+            $_temp['image'] = isset($row['image']);
+            $_temp['images'] = isset($row['images']);
 
             //
             $_temp['zhuban'] = isset($row['zhuban']) ? $row['zhuban'] : '';
@@ -147,7 +151,14 @@ class CronEtl extends Base_Controller {
         }
         return $return;
     }
-
+    
+    private function _xmldatakey() {
+        return array(
+            'title',
+            'keywords',
+            'content'
+        );
+    }
     /**
      * 生成到xml格式
      * @param type $data
