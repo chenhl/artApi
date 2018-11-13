@@ -50,7 +50,7 @@ class Search_model extends Base_model {
         } else {
             $param['q'] = 'q=*:*';
             //排序
-            $param['sort'] = '&sort=articleId+desc';
+            $param['sort'] = '&sort=aid+desc';
         }
         //cate
         if (!empty($condition['categoryId'])) {
@@ -99,17 +99,14 @@ class Search_model extends Base_model {
         $uri .= !empty($param['facet']) ? $param['facet'] : '';
         $uri .= $param['sort'];
         $uri .= $param['start'] . $param['rows'];
-
-        $data = $this->mockFeed();
-
+        
+        $this->load->library(array("lib_curl"));
+        $res = Lib_curl::httpRequest($this->solr_url, $uri);
+        $return = json_decode($res, TRUE);
         return array(
-            'total' => 20,
-            'list' => $data,
-        );
-//        $this->load->library(array("lib_curl"));
-//        $res = Lib_curl::httpRequest($this->solr_url, $uri);
-//        $return = json_decode($res, TRUE);
-//        return $return;
+            'total' => $return['response']['numFound'],
+            'list' => $return['response']['docs'],
+        );        
     }
 
     private function mockFeed() {

@@ -14,11 +14,11 @@ class Article extends Base_Controller {
      */
     public function feed() {
 
-        $post = $this->input->post();
-        if (!$this->chkSign($post)) {
-            $this->_json = array('code' => 500, 'msg' => 'fail', 'data' => array());
-            util::toJson($this->_json);
-        }
+        $post = $this->input->get();
+//        if (!$this->chkSign($post)) {
+//            $this->_json = array('code' => 500, 'msg' => 'fail', 'data' => array());
+//            util::toJson($this->_json);
+//        }
 
         $condition = array();
         $condition['q'] = isset($post['q']) ? $post['q'] : '';

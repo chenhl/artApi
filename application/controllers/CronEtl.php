@@ -41,6 +41,7 @@ class CronEtl extends Base_Controller {
         $this->_init();
         //文章
         $_data = $this->article_model->etl_article();
+//        print_r($_data);
         //机构（）
 
         $data = $this->_parseData($_data,'news');
@@ -61,7 +62,7 @@ class CronEtl extends Base_Controller {
         //增量
         $conditon = array('date_time' => $date_time);
         $_data = $this->article_model->etl_article($conditon);
-
+        
         //解析生成xml
         $data = $this->_parseData($_data);
         $this->_parse2addxml($data, TRUE);
@@ -109,7 +110,7 @@ class CronEtl extends Base_Controller {
             $_temp['aid'] = $row['id'];
             $_temp['status'] = $row['status'];
 
-            $_temp['uid'] = $row['userid'];
+            $_temp['uid'] = !empty($row['userid'])?$row['userid']:0;
             $_temp['uname'] = $row['nickname'];
             $_temp['upic'] = $row['userpic'];
 
@@ -139,12 +140,12 @@ class CronEtl extends Base_Controller {
             if (!empty($row['start_time'])) {
                 $_temp['start_time'] = date("Y-m-d\TH:i:s\Z", strtotime($row['start_time']));
             } else {
-                $_temp['start_time'] = '000-00-00T00:00:00Z';
+                $_temp['start_time'] = '1970-01-01T08:00:00Z';
             }
             if (!empty($row['end_time'])) {
                 $_temp['end_time'] = date("Y-m-d\TH:i:s\Z", strtotime($row['end_time']));
             } else {
-                $_temp['end_time'] = '000-00-00T00:00:00Z';
+                $_temp['end_time'] = '1970-01-01T08:00:00Z';
             }
 
             $return[] = $_temp;

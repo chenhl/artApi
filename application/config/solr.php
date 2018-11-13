@@ -12,5 +12,6 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 |
 */
 $config['solr_conf'] = array(
-    'url' => $_SERVER['SOLR_URL'],
+//    'url' => $_SERVER['SOLR_URL'],
+    'url'=>'http://localhost:8983/solr/test/select',
 );
