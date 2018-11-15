@@ -107,17 +107,17 @@ class CronEtl extends Base_Controller {
         foreach ($data as $row) {
             $_temp = array();
             $_temp['id'] = $channel . '-' . $row['id'];
-            $_temp['aid'] = $row['id'];
+            $_temp['aid'] = $row['aid'];
             $_temp['status'] = $row['status'];
 
-            $_temp['uid'] = !empty($row['userid'])?$row['userid']:0;
-            $_temp['uname'] = $row['nickname'];
+            $_temp['uid'] = !empty($row['uid'])?$row['uid']:0;
+            $_temp['uname'] = $row['uname'];
             $_temp['upic'] = $row['userpic'];
 
             $_temp['channel'] = $channel;
             $_temp['cate_id'] = $row['catid'];
             $_temp['cate_name'] = $this->cate_info[$row['catid']]['catname'];
-
+            
             $_temp['collect_num'] = isset($row['collect_num']) ? $row['collect_num'] : 0;
             $_temp['comment_num'] = isset($row['comment_num']) ? $row['comment_num'] : 0;
             $_temp['like_num'] = isset($row['like_num']) ? $row['like_num'] : 0;

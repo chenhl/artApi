@@ -31,12 +31,12 @@ class Article_model extends Base_model {
             $where .= ' and n.update_time>=:date_time';
             $param[':date_time'] = $condition['date_time'];
         }
-        $query = 'select n.id,n.status,n.catid,n.title,n.thumb,n.thumbs,n.keywords,n.description,n.create_time,n.update_time,'
+        $query = 'select n.id,n.aid,n.uid,n.uname,n.userpic,n.collect_num,n.like_num,n.comment_num,n.status,n.catid,n.title,n.thumb,n.thumbs,n.keywords,n.tags,n.description,n.create_time,n.update_time,'
                 . 'd.content,d.content_search,'
-                . 'm.nickname,m.username,m.userid,m.userpic,m.follow_num,m.collect_num'
+                . 'm.nickname,m.username,m.userid,m.userpic as m_userpic '
                 . ' from v9_news as n'
                 . ' left join v9_news_data as d on n.id=d.id'
-                . ' left join v9_member as m on n.username=m.username'
+                . ' left join v9_member as m on n.uname=m.nickname'
                 . ' where ' . $where;
         $db = $this->db->conn_id->prepare($query);
         $db->execute($param);
