@@ -43,9 +43,9 @@ class Base_model extends CI_Model {
         //字段值
         $values_sql = array();
         if ($data[0]) {
-            
+
             $fields = array_keys($data[0]);
-            
+
             foreach ($data as $key => $val) {
                 $value = array();
                 foreach ($val as $field => $v) {
@@ -56,9 +56,9 @@ class Base_model extends CI_Model {
                 $values_sql[] = '(' . join(',', $value) . ')';
             }
         } else {
-            
+
             $fields = array_keys($data);
-            
+
             $value = array();
             foreach ($data as $key => $val) {
                 $_val_key = ':' . $key;
@@ -139,6 +139,15 @@ class Base_model extends CI_Model {
     public function query_row($sql) {
         $query = $this->db->query($sql);
         return $query->row_array();
+    }
+
+    /**
+     * 生成图片全路径
+     * @param type $img
+     * @return type
+     */
+    protected function imgurl($img) {
+        return $_SERVER['IMG_HOST1'] . $img;
     }
 
 }

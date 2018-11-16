@@ -99,14 +99,36 @@ class Search_model extends Base_model {
         $uri .= !empty($param['facet']) ? $param['facet'] : '';
         $uri .= $param['sort'];
         $uri .= $param['start'] . $param['rows'];
-        
+
         $this->load->library(array("lib_curl"));
         $res = Lib_curl::httpRequest($this->solr_url, $uri);
         $return = json_decode($res, TRUE);
+        if ($return['response']['numFound'] > 0) {
+
+            foreach ($return['response']['docs'] as $key => $row) {
+                if ($row['image']) {
+                    $return['response']['docs'][$key]['image'] = $this->imgurl($row['image']);
+                }
+                if ($row['images']) {
+                    $imgs = json_decode($row['images'], TRUE);
+                    $_tmp = array();
+                    foreach ($imgs as $img) {
+                        $_tmp[] = $this->imgurl($img);
+                    }
+                    $return['response']['docs'][$key]['images'] = $_tmp;
+                }
+                if ($row['focuspic']) {
+                    $return['response']['docs'][$key]['focuspic'] = $this->imgurl($row['focuspic']);
+                }
+                if ($row['upic']) {
+                    $return['response']['docs'][$key]['upic'] = $this->imgurl($row['upic']);
+                }
+            }
+        }
         return array(
             'total' => $return['response']['numFound'],
             'list' => $return['response']['docs'],
-        );        
+        );
     }
 
     private function mockFeed() {

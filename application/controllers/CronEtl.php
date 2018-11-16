@@ -131,8 +131,8 @@ class CronEtl extends Base_Controller {
             $_temp['content'] = !empty($row['content_search']) ? $row['content_search'] : strip_tags($row['content']);
 
             $_temp['focuspic'] = isset($row['focuspic']) ? $row['focuspic'] : '';
-            $_temp['image'] = isset($row['image']);
-            $_temp['images'] = isset($row['images']);
+            $_temp['image'] = isset($row['thumb'])?$row['thumb']:'';
+            $_temp['images'] = isset($row['thumbs'])?$row['thumbs']:'';
 
             //
             $_temp['zhuban'] = isset($row['zhuban']) ? $row['zhuban'] : '';
