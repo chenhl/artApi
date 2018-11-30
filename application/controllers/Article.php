@@ -13,7 +13,8 @@ class Article extends Base_Controller {
      * 文章feed列表
      */
     public function feed() {
-        $post = $this->input->post();
+        $post = $this->input->get();
+        
         if (!$this->chkSign($post)) {
             $this->_json = array('code' => 500, 'msg' => 'fail', 'data' => array());
             util::toJson($this->_json);

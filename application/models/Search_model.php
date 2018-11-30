@@ -28,6 +28,7 @@ class Search_model extends Base_model {
      * @return type
      */
     public function getListFromSolor($condition, $page = 1, $pagesize = 20, $facet_return = false) {
+//        echo $this->solr_url;
         $param = array();
         //默认条件
         $param['fq'] = array();
@@ -99,7 +100,7 @@ class Search_model extends Base_model {
         $uri .= !empty($param['facet']) ? $param['facet'] : '';
         $uri .= $param['sort'];
         $uri .= $param['start'] . $param['rows'];
-
+//        echo $this->solr_url;
         $this->load->library(array("lib_curl"));
         $res = Lib_curl::httpRequest($this->solr_url, $uri);
         $return = json_decode($res, TRUE);
@@ -128,11 +129,16 @@ class Search_model extends Base_model {
                     $return['response']['docs'][$key]['upic'] = $this->imgurl($row['upic']);
                 }
             }
+            return array(
+                'total' => $return['response']['numFound'],
+                'list' => array_values($return['response']['docs']),
+            );
+        } else {
+            return array(
+                'total' => 0,
+                'list' => array(),
+            );
         }
-        return array(
-            'total' => $return['response']['numFound'],
-            'list' => array_values($return['response']['docs']),
-        );
     }
 
     private function mockFeed() {
