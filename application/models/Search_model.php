@@ -40,7 +40,7 @@ class Search_model extends Base_model {
         //关键字
         if (!empty($condition['q'])) {
             $param['q'] = 'q=' . urlencode($condition['q']);
-            if ($condition['q.op']) {//solr7.2中 schema已不在支持参数defaultOperator
+            if (!empty($condition['q.op'])) {//solr7.2中 schema已不在支持参数defaultOperator
                 $param['q'] .= '&q.op=' . $condition['q.op']; // AND OR
             } else {
                 $param['q'] .= '&q.op=AND'; // AND OR
@@ -109,13 +109,17 @@ class Search_model extends Base_model {
                 if ($row['image']) {
                     $return['response']['docs'][$key]['image'] = $this->imgurl($row['image']);
                 }
-                if ($row['images']) {
+                if (!empty($row['images'])) {
                     $imgs = json_decode($row['images'], TRUE);
-                    $_tmp = array();
-                    foreach ($imgs as $img) {
-                        $_tmp[] = $this->imgurl($img);
+                    if (!empty($imgs)) {
+                        $_tmp = array();
+                        foreach ($imgs as $img) {
+                            $_tmp[] = $this->imgurl($img);
+                        }
+                        $return['response']['docs'][$key]['images'] = $_tmp;
+                    } else {
+                        $return['response']['docs'][$key]['images'] = array();
                     }
-                    $return['response']['docs'][$key]['images'] = $_tmp;
                 }
                 if ($row['focuspic']) {
                     $return['response']['docs'][$key]['focuspic'] = $this->imgurl($row['focuspic']);
@@ -127,7 +131,7 @@ class Search_model extends Base_model {
         }
         return array(
             'total' => $return['response']['numFound'],
-            'list' => $return['response']['docs'],
+            'list' => array_values($return['response']['docs']),
         );
     }
 
@@ -178,35 +182,6 @@ class Search_model extends Base_model {
             }
             $return[] = $_tmp;
         }
-        return $return;
-//        return array(json_decode($data, TRUE));
-    }
-
-    public function getDetail($condition) {
-        return $this->mockDetail();
-    }
-
-    private function mockDetail() {
-
-        $data = '{
-  "aid": 6093075,
-  "ud": 7669697,
-  "uname": "authorName",
-  "upic": "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/43feefdab91d46f2802c10d1f6102e71.jpeg",
-  "title": "刚刚！云南省级机构改革首批6部门挂牌成立！",
-  "mobile_title": "刚刚！云南省级机构改革首批6部门挂牌成立！",
-  "tags": [
-    {
-      "id": 19031,
-      "name": "艺术家"
-    }
-  ],
-  "cate_id": "111",
-  "cate_name": "news",
-  "content": "刚刚！云南省级机构改革首批6部门挂牌成立！刚刚！云南省级机构改革首批6部门挂牌成立！刚刚！云南省级机构改革首批6部门挂牌成立！刚刚！云南省级机构改革首批6部门挂牌成立！刚刚！云南省级机构改革首批6部门挂牌成立！",
-  "create_time": "2018-10-24 10:11:13"
-}';
-        $return = json_decode($data, TRUE);
         return $return;
 //        return array(json_decode($data, TRUE));
     }
