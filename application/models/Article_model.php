@@ -31,7 +31,9 @@ class Article_model extends Base_model {
             $where .= ' and n.update_time>=:date_time';
             $param[':date_time'] = $condition['date_time'];
         }
-        $query = 'select n.id,n.aid,n.uid,n.uname,n.userpic,n.collect_num,n.like_num,n.comment_num,n.status,n.catid,n.title,n.thumb,n.thumbs,n.keywords,n.tags,n.description,n.create_time,n.update_time,'
+//        $fields_n = 'n.id,n.aid,n.uid,n.uname,n.userpic,n.collect_num,n.like_num,n.comment_num,n.status,n.catid,n.title,n.thumb,n.thumbs,n.keywords,n.tags,n.description,n.create_time,n.update_time,';
+        $fields_n = 'n.*,';
+        $query = 'select ' . $fields_n
                 . 'd.content,d.content_search,'
                 . 'm.nickname,m.username,m.userid,m.userpic as m_userpic '
                 . ' from v9_news as n'
@@ -61,7 +63,7 @@ class Article_model extends Base_model {
         $db = $this->db->conn_id->prepare($query);
         $db->execute($param);
         $return = $db->fetch(PDO::FETCH_ASSOC);
-        if(!empty($return['tags'])){
+        if (!empty($return['tags'])) {
             $return['tags'] = json_decode($return['tags'], TRUE);
         }
         return $return;
