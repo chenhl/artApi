@@ -44,12 +44,13 @@ class CronEtl extends Base_Controller {
 
         $this->_init();
         //文章
-        $_data = $this->article_model->etl_article();
+        $condition = array('id' => 854);
+        $_data = $this->article_model->etl_article($condition);
 //        print_r($_data);
         //机构（）
 
         $data = $this->_parseData($_data, 'news');
-        $this->_parse2addxml($data);
+//        $this->_parse2addxml($data);
     }
 
     /**
@@ -153,11 +154,30 @@ class CronEtl extends Base_Controller {
             }
             //attr
             if (!empty($row['spider_attr'])) {
-                $spider_attr = json_encode($row['spider_attr'], TRUE);
+                $spider_attr = json_decode($row['spider_attr'], TRUE);
+                print_r($this->exhibit_meta);
+                print_r($spider_attr);
+                $attr = array();
+                if (json_last_error() == JSON_ERROR_NONE) {
+                    foreach ($spider_attr as $_key => $_val) {
+                        $_val = $this->_parseBase($_val);
+                        $_attr = $this->exhibit_meta[$_key];
+                        if ($_attr['first']) {
+                            $_val = $_val[0];
+                        }
+                        if ($_attr['parse']) {
+                            $parse = $_attr['parse'];
+                            $_val = $this->$parse($_val);
+                        }
+                        $attr[$_attr['code']] = $_val;
+                    }
+                }
+                $_temp['attr'] = $attr;
             }
 
             $return[] = $_temp;
         }
+        print_r($return);
         return $return;
     }
 
@@ -206,24 +226,51 @@ class CronEtl extends Base_Controller {
 
     private function _getExhibitMeta() {
         $meta = array(
-            array('txt' => '展览名称：', 'code' => 'name'),
-            array('txt' => '展览时间：', 'code' => 'times'),
-            array('txt' => '开幕时间：', 'code' => 'open_time'),
-            array('txt' => '展览机构：', 'code' => 'org'),
-            array('txt' => '展览地址：', 'code' => 'address'),
-            array('txt' => '展览备注：', 'code' => 'msg'),
-            array('txt' => '展览城市：', 'code' => 'area'),
-            array('txt' => '主办单位：', 'code' => 'org_main'),
-            array('txt' => '承办单位：', 'code' => 'org_manager'),
-            array('txt' => '策 展 人：', 'code' => 'plan'),
-            array('txt' => '展览咨询：', 'code' => 'consultation'),
-            array('txt' => '参展艺术家：', 'code' => 'artists'),
+            array('txt' => '展览名称：', 'code' => 'name', 'first' => TRUE, 'parse' => '', 'multi' => FALSE),
+            array('txt' => '展览时间：', 'code' => 'times', 'first' => TRUE, 'parse' => '_parseTimes', 'multi' => FALSE),
+            array('txt' => '开幕时间：', 'code' => 'open_time', 'first' => TRUE, 'parse' => '', 'multi' => FALSE),
+            array('txt' => '展览城市：', 'code' => 'area', 'first' => TRUE, 'parse' => '_parseArea', 'multi' => FALSE),
+            array('txt' => '展览地址：', 'code' => 'address', 'first' => TRUE, 'parse' => '', 'multi' => FALSE),
+            
+            array('txt' => '展览咨询：', 'code' => 'consultation', 'first' => FALSE, 'parse' => '','multi'=>FALSE),
+            array('txt' => '展览备注：', 'code' => 'msg', 'first' => FALSE, 'parse' => '','multi'=>FALSE),
+            
+            array('txt' => '展览机构：', 'code' => 'org', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
+            array('txt' => '主办单位：', 'code' => 'org_main', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
+            array('txt' => '承办单位：', 'code' => 'org_manager', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
+            array('txt' => '策 展 人：', 'code' => 'plan', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
+            array('txt' => '艺术总监：', 'code' => 'art_chief', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
+            array('txt' => '参展人员：', 'code' => 'artists', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
+            array('txt' => '参展艺术家：', 'code' => 'artists', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
         );
         $return = array();
         foreach ($meta as $row) {
-            $return[$row['txt']] = $row['code'];
+            $return[$row['txt']] = array(
+                'code' => $row['code'],
+                'first' => $row['first'],
+                'parse' => $row['parse'],
+            );
         }
         return $return;
+    }
+
+    private function _parseBase($val) {
+        $return = array();
+        foreach ($val as $value) {
+            $value = trim($value);
+            if (!empty($value)) {
+                $return[] = $value;
+            }
+        }
+        return $return;
+    }
+
+    private function _parseTimes($val) {
+        return $val;
+    }
+
+    private function _parseArea($val) {
+        return $val;
     }
 
     private function _getGalleryMeta() {

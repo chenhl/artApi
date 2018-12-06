@@ -31,6 +31,11 @@ class Article_model extends Base_model {
             $where .= ' and n.update_time>=:date_time';
             $param[':date_time'] = $condition['date_time'];
         }
+        
+        if (!empty($condition['id'])) {
+            $where .= ' and n.id=:id';
+            $param[':id'] = $condition['id'];
+        }
 //        $fields_n = 'n.id,n.aid,n.uid,n.uname,n.userpic,n.collect_num,n.like_num,n.comment_num,n.status,n.catid,n.title,n.thumb,n.thumbs,n.keywords,n.tags,n.description,n.create_time,n.update_time,';
         $fields_n = 'n.*,';
         $query = 'select ' . $fields_n
