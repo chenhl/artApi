@@ -19,7 +19,7 @@ class Article_model extends Base_model {
     }
 
     /**
-     * 文章列表
+     * 文章列表 cron etl 使用
      * @param type $condition
      * @return type
      */

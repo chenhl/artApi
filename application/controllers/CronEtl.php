@@ -17,7 +17,7 @@ class CronEtl extends Base_Controller {
     private $area_info = array();
     private $exhibit_meta = array();
     private $gallery_meta = array();
-    private $xml_dir = FCPATH . 'xml/';
+    private $xml_dir = '';
 
     public function __construct() {
         parent::__construct();
@@ -25,10 +25,11 @@ class CronEtl extends Base_Controller {
             exit;
         }
         $this->load->model(array('article_model', 'category_model'));
+        $this->xml_dir = $_SERVER['SOLR_XML_PATH'];
     }
 
     private function _init() {
-        ini_set('memory_limit', '500M');
+        ini_set('memory_limit', '1000M');
         //初化数据
         $this->cate_info = $this->_getCate();
         $this->area_info = $this->_getArea();
@@ -40,17 +41,16 @@ class CronEtl extends Base_Controller {
      * 全量更新
      */
     public function full_import() {
-//        $domain = 'www-test.babyonlinedress.cn';
-
         $this->_init();
         //文章
-        $condition = array('id' => 854);
+//        $condition = array('id' => 854);
+        $condition = array();
         $_data = $this->article_model->etl_article($condition);
 //        print_r($_data);
         //机构（）
 
         $data = $this->_parseData($_data, 'news');
-//        $this->_parse2addxml($data);
+        $this->_parse2addxml($data);
     }
 
     /**
@@ -139,45 +139,17 @@ class CronEtl extends Base_Controller {
             $_temp['image'] = isset($row['thumb']) ? $row['thumb'] : '';
             $_temp['images'] = isset($row['thumbs']) ? $row['thumbs'] : '';
 
-            //
-            $_temp['zhuban'] = isset($row['zhuban']) ? $row['zhuban'] : '';
-            $_temp['xieban'] = isset($row['xieban']) ? $row['xieban'] : '';
-            if (!empty($row['start_time'])) {
-                $_temp['start_time'] = date("Y-m-d\TH:i:s\Z", strtotime($row['start_time']));
-            } else {
-                $_temp['start_time'] = '1970-01-01T08:00:00Z';
+
+            if ($row['catid'] == 10) {//exhibit attr
+                $this->_parseExhibitAttr($_temp, $row);
+            } elseif ($row['catid'] == 11) {//gallery attr
+                $this->_parseGalleryAttr($_temp, $row);
             }
-            if (!empty($row['end_time'])) {
-                $_temp['end_time'] = date("Y-m-d\TH:i:s\Z", strtotime($row['end_time']));
-            } else {
-                $_temp['end_time'] = '1970-01-01T08:00:00Z';
-            }
-            //attr
-            if (!empty($row['spider_attr'])) {
-                $spider_attr = json_decode($row['spider_attr'], TRUE);
-                print_r($this->exhibit_meta);
-                print_r($spider_attr);
-                $attr = array();
-                if (json_last_error() == JSON_ERROR_NONE) {
-                    foreach ($spider_attr as $_key => $_val) {
-                        $_val = $this->_parseBase($_val);
-                        $_attr = $this->exhibit_meta[$_key];
-                        if ($_attr['first']) {
-                            $_val = $_val[0];
-                        }
-                        if ($_attr['parse']) {
-                            $parse = $_attr['parse'];
-                            $_val = $this->$parse($_val);
-                        }
-                        $attr[$_attr['code']] = $_val;
-                    }
-                }
-                $_temp['attr'] = $attr;
-            }
+
 
             $return[] = $_temp;
         }
-        print_r($return);
+//        print_r($return);
         return $return;
     }
 
@@ -185,7 +157,12 @@ class CronEtl extends Base_Controller {
         return array(
             'title',
             'keywords',
-            'content'
+            'content',
+            
+            'attr_s_address',
+            'attr_s_consultation',
+            'attr_s_msg',
+            
         );
     }
 
@@ -196,9 +173,9 @@ class CronEtl extends Base_Controller {
     private function _parse2addxml(&$data, $delta = false) {
         $_xmldatakey = $this->_xmldatakey();
         if ($delta) {
-            $file = $this->xml_dir . 'delta_import.xml';
+            $file = $this->xml_dir . '/delta_import.xml';
         } else {
-            $file = $this->xml_dir . 'full_import.xml';
+            $file = $this->xml_dir . '/full_import.xml';
         }
         $xml = "<add>\t\n";
         foreach ($data as $row) {
@@ -224,24 +201,31 @@ class CronEtl extends Base_Controller {
         echo $file . " finish\n";
     }
 
+    /**
+     * exhibit attr
+     * @return array
+     */
     private function _getExhibitMeta() {
         $meta = array(
-            array('txt' => '展览名称：', 'code' => 'name', 'first' => TRUE, 'parse' => '', 'multi' => FALSE),
+//            array('txt' => '展览名称：', 'code' => 'name', 'first' => TRUE, 'parse' => '', 'multi' => FALSE),
+            //index store 
             array('txt' => '展览时间：', 'code' => 'times', 'first' => TRUE, 'parse' => '_parseTimes', 'multi' => FALSE),
-            array('txt' => '开幕时间：', 'code' => 'open_time', 'first' => TRUE, 'parse' => '', 'multi' => FALSE),
             array('txt' => '展览城市：', 'code' => 'area', 'first' => TRUE, 'parse' => '_parseArea', 'multi' => FALSE),
-            array('txt' => '展览地址：', 'code' => 'address', 'first' => TRUE, 'parse' => '', 'multi' => FALSE),
-            
-            array('txt' => '展览咨询：', 'code' => 'consultation', 'first' => FALSE, 'parse' => '','multi'=>FALSE),
-            array('txt' => '展览备注：', 'code' => 'msg', 'first' => FALSE, 'parse' => '','multi'=>FALSE),
-            
-            array('txt' => '展览机构：', 'code' => 'org', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
-            array('txt' => '主办单位：', 'code' => 'org_main', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
-            array('txt' => '承办单位：', 'code' => 'org_manager', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
-            array('txt' => '策 展 人：', 'code' => 'plan', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
-            array('txt' => '艺术总监：', 'code' => 'art_chief', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
-            array('txt' => '参展人员：', 'code' => 'artists', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
-            array('txt' => '参展艺术家：', 'code' => 'artists', 'first' => FALSE, 'parse' => '','multi'=>TRUE),
+            //
+            array('txt' => '开幕时间：', 'code' => 'open_time', 'first' => TRUE, 'parse' => '', 'multi' => FALSE),
+            //index store string
+            array('txt' => '展览地址：', 'code' => 'address', 'first' => FALSE, 'parse' => '', 'multi' => FALSE),
+            array('txt' => '展览咨询：', 'code' => 'consultation', 'first' => FALSE, 'parse' => '', 'multi' => FALSE),
+            array('txt' => '展览备注：', 'code' => 'msg', 'first' => FALSE, 'parse' => '', 'multi' => FALSE),
+            //index store arr
+            array('txt' => '展览机构：', 'code' => 'org', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
+            array('txt' => '主办单位：', 'code' => 'org_main', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
+            array('txt' => '协办单位：', 'code' => 'org_slave', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
+            array('txt' => '承办单位：', 'code' => 'org_manager', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
+            array('txt' => '策 展 人：', 'code' => 'plan', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
+            array('txt' => '艺术总监：', 'code' => 'art_chief', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
+            array('txt' => '参展人员：', 'code' => 'artists', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
+            array('txt' => '参展艺术家：', 'code' => 'artists', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
         );
         $return = array();
         foreach ($meta as $row) {
@@ -249,30 +233,16 @@ class CronEtl extends Base_Controller {
                 'code' => $row['code'],
                 'first' => $row['first'],
                 'parse' => $row['parse'],
+                'multi' => $row['multi'],
             );
         }
         return $return;
     }
 
-    private function _parseBase($val) {
-        $return = array();
-        foreach ($val as $value) {
-            $value = trim($value);
-            if (!empty($value)) {
-                $return[] = $value;
-            }
-        }
-        return $return;
-    }
-
-    private function _parseTimes($val) {
-        return $val;
-    }
-
-    private function _parseArea($val) {
-        return $val;
-    }
-
+    /**
+     * gallery attr
+     * @return array
+     */
     private function _getGalleryMeta() {
         $meta = array(
             array('txt' => '所在城市：', 'code' => 'area'),
@@ -283,6 +253,109 @@ class CronEtl extends Base_Controller {
             $return[$row['txt']] = $row['code'];
         }
         return $return;
+    }
+
+    /**
+     * 过滤attr
+     * @param type $val
+     * @return type
+     */
+    private function _filterAttr($val) {
+        $return = array();
+        foreach ($val as $value) {
+            $value = trim($value);
+            if (!empty($value)) {
+                $return[] = htmlspecialchars($value);
+            }
+        }
+        return $return;
+    }
+    
+
+    /**
+     * 解析 gallery attr (spider时已处理好key)
+     * @param type $_temp
+     * @param type $row
+     */
+    private function _parseGalleryAttr(&$_temp, &$row) {
+        if (!empty($row['attr'])) {
+            $spider_attr = json_decode($row['attr'], TRUE);
+            if (json_last_error() == JSON_ERROR_NONE) {
+                foreach ($spider_attr as $_key => $_val) {
+                    if ($_key == 'area') {//area string
+                        $_temp['area_province'] = trim($_val[0]);
+                        if (isset($_val[1])) {
+                            $_temp['area_city'] = trim($_val[1]);
+                        } else {
+                            $_temp['area_city'] = '';
+                        }
+                        if ($_temp['area_province'] != $_temp['area_city']) {//北京-北京
+                            $_temp['area'] = array($_temp['area_province'], $_temp['area_city']);
+                        } else {
+                            $_temp['area'] = array($_temp['area_province']);
+                        }
+                    } else { // 主营项目 多值
+                        if (!empty($_val)) {
+                            $_temp['attr_m_i_' . $_key] = $_val;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 解析 exhibit spider attr
+     * @param type $_temp
+     * @param type $row
+     */
+    private function _parseExhibitAttr(&$_temp, &$row) {
+        if (!empty($row['spider_attr'])) {
+            $spider_attr = json_decode($row['spider_attr'], TRUE);
+            if (json_last_error() == JSON_ERROR_NONE) {
+                foreach ($spider_attr as $_key => $_val) {
+                    //去空格、空元素
+                    $_val = $this->_filterAttr($_val);
+                    if (empty($_val)) {
+                        continue;
+                    }
+                    $_attr = isset($this->exhibit_meta[$_key]) ? $this->exhibit_meta[$_key] : array();
+                    if (empty($_attr)) {
+                        continue;
+                    }
+                    //取需要的元素，转成string或保留array()
+                    if ($_attr['first']) {
+                        $_val = $_val[0];
+                    }
+                    if ($_attr['code'] == 'times') {//times string
+                        $_arr = explode(' - ', $_val);
+                        $_temp['start_time'] = date("Y-m-d\TH:i:s\Z", strtotime(trim($_arr[0])));
+                        $_temp['end_time'] = date("Y-m-d\TH:i:s\Z", strtotime(trim($_arr[1])));
+                    } elseif ($_attr['code'] == 'open_time') {//open_time string
+                        $_temp['open_time'] = date("Y-m-d\TH:i:s\Z", strtotime($_val));
+                    } elseif ($_attr['code'] == 'area') {//area string
+                        $_arr = explode('-', $_val);
+                        $_temp['area_province'] = trim($_arr[0]);
+                        if (isset($_arr[1])) {
+                            $_temp['area_city'] = trim($_arr[1]);
+                        } else {
+                            $_temp['area_city'] = '';
+                        }
+                        if ($_temp['area_province'] != $_temp['area_city']) {//北京-北京
+                            $_temp['area'] = array($_temp['area_province'], $_temp['area_city']);
+                        } else {
+                            $_temp['area'] = array($_temp['area_province']);
+                        }
+                    } else {
+                        if (!$_attr['multi']) {//msg address etc.. string
+                            $_temp['attr_s_' . $_attr['code']] = join('', $_val);
+                        } else { // org artist etc..
+                            $_temp['attr_m_i_' . $_attr['code']] = $_val;
+                        }
+                    }
+                }
+            }
+        }
     }
 
 }
