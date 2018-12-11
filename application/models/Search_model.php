@@ -128,6 +128,9 @@ class Search_model extends Base_model {
                 if ($row['upic']) {
                     $return['response']['docs'][$key]['upic'] = $this->imgurl($row['upic']);
                 }
+                $return['response']['docs'][$key]['a_url'] = $this->article_url($row['aid']);
+                $return['response']['docs'][$key]['u_url'] = $this->author_url($row['uid']);
+                
             }
             return array(
                 'total' => $return['response']['numFound'],

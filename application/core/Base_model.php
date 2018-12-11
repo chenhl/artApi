@@ -149,5 +149,12 @@ class Base_model extends CI_Model {
     protected function imgurl($img) {
         return $_SERVER['IMG_HOST1'] .'/'. $img;
     }
-
+    
+    protected function article_url($aid) {
+        return '/a/'. $aid;
+    }
+    
+    protected function author_url($uid) {
+        return '/u/'. $uid;
+    }
 }
