@@ -224,6 +224,7 @@ class CronEtl extends Base_Controller {
             array('txt' => '承办单位：', 'code' => 'org_manager', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
             array('txt' => '策 展 人：', 'code' => 'plan', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
             array('txt' => '艺术总监：', 'code' => 'art_chief', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
+            array('txt' => '学术主持：', 'code' => 'art_academic', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
             array('txt' => '参展人员：', 'code' => 'artists', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
             array('txt' => '参展艺术家：', 'code' => 'artists', 'first' => FALSE, 'parse' => '', 'multi' => TRUE),
         );
