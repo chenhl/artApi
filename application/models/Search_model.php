@@ -54,11 +54,11 @@ class Search_model extends Base_model {
             $param['sort'] = '&sort=aid+desc';
         }
         //cate
-        if (!empty($condition['categoryId'])) {
-            $param['fq'][] = 'fq=categoryId:' . $condition['categoryId'];
+        if (!empty($condition['cate_id'])) {
+            $param['fq'][] = 'fq=cate_id:' . $condition['cate_id'];
         }
         //author
-        if (!empty($condition['ud'])) {
+        if (!empty($condition['uid'])) {
             $param['fq'][] = 'fq=uid:' . $condition['uid'];
         }
 
@@ -100,7 +100,9 @@ class Search_model extends Base_model {
         $uri .= !empty($param['facet']) ? $param['facet'] : '';
         $uri .= $param['sort'];
         $uri .= $param['start'] . $param['rows'];
+//        print_r($param);
 //        echo $this->solr_url;
+//        echo $uri;
         $this->load->library(array("lib_curl"));
         $res = Lib_curl::httpRequest($this->solr_url, $uri);
         $return = json_decode($res, TRUE);
