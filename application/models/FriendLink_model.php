@@ -11,7 +11,7 @@
  *
  * @author Administrator
  */
-class Channel_model extends Base_model {
+class FriendLink_model extends Base_model {
 
     public function __construct() {
         parent::__construct();
@@ -25,14 +25,17 @@ class Channel_model extends Base_model {
      */
     public function getList($condition = array()) {
 
-        $return = array(
-            array('id' => 0, 'name' => '推荐', 'code' => 'all'),
-            array('id' => 1, 'name' => '热点', 'code' => 'news'),
-            array('id' => 2, 'name' => '人物', 'code' => 'artist'),
-            array('id' => 3, 'name' => '展览', 'code' => 'exhibit'),
-            array('id' => 4, 'name' => '画廊', 'code' => 'gallery'),
-            array('id' => 5, 'name' => '院校', 'code' => 'edu'),
-        );
+        $param = array();
+        $where = ' l.siteid=1 and l.passed=1';
+        $param[':siteid'] = 1;
+        $fields_n = 'l.linkid,l.linktype,l.name,l.url,l.logo';
+        $query = 'select ' . $fields_n
+                . ' from v9_link as l'
+                . ' where ' . $where;
+        $db = $this->db->conn_id->prepare($query);
+        $db->execute($param);
+        $return = $db->fetchAll(PDO::FETCH_ASSOC);
+        
         return $return;
     }
 
