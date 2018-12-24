@@ -114,7 +114,7 @@ class Search_model extends Base_model {
                 }
                 if (!empty($row['images'])) {
                     $imgs = json_decode($row['images'], TRUE);
-                    if (!empty($imgs)) {
+                    if (!empty($imgs) && count($imgs) >= 4) {//
                         $_tmp = array();
                         foreach ($imgs as $img) {
                             $_tmp[] = $this->imgurl($img);
@@ -132,7 +132,6 @@ class Search_model extends Base_model {
                 }
                 $return['response']['docs'][$key]['a_url'] = $this->article_url($row['aid']);
                 $return['response']['docs'][$key]['u_url'] = $this->author_url($row['uid']);
-                
             }
             return array(
                 'total' => $return['response']['numFound'],
