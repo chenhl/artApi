@@ -22,6 +22,30 @@ class Collection_model extends Base_model {
     }
 
     /**
+     * 是否收藏
+     * @param type $data
+     * @return type
+     */
+    public function isCollected($uid, $aid) {
+        $param = array();
+        $where = ' uid=:uid';
+        $param[':uid'] = $uid;
+        $where .= ' and aid=:aid';
+        $param[':aid'] = $aid;
+
+        $query = 'select id from ' . $this->table
+                . 'where ' . $where . ' limit 1';
+        $db = $this->db->conn_id->prepare($query);
+        $db->execute($param);
+        $data = $db->fetch(PDO::FETCH_ASSOC);
+        if ($data) {
+            return TRUE;
+        } else {
+            return FALSE;
+        }
+    }
+
+    /**
      * 添加收藏
      * @param type $data
      * @return type
@@ -41,7 +65,7 @@ class Collection_model extends Base_model {
      */
     public function cancel($data) {
         $sql = 'delete from ' . $this->table . ' where uid = ' . intval($data['uid'])
-                . ' and fuid=' . intval($data['fuid']);
+                . ' and aid=' . intval($data['aid']);
         return $this->query($sql);
     }
 

@@ -6,7 +6,7 @@ class Article extends Base_Controller {
 
     public function __construct() {
         parent::__construct();
-        $this->load->model(array('search_model'));
+        $this->load->model(array('search_model', 'collection_model'));
     }
 
     /**
@@ -46,9 +46,18 @@ class Article extends Base_Controller {
         }
         $this->load->model(array('article_model'));
         $condition = array();
-        $condition['aid'] = $post['aid'];
+        $condition['aid'] = intval($post['aid']);
         $res = $this->article_model->getDetail($condition);
-        
+        if ($res) {
+            $res['is_collected'] = 0;
+            if (isset($post['user_id'])) {//登录用户
+                $is_collected = $this->collection_model->isCollected($post['user_id'], $condition['aid']);
+                if ($is_collected) {
+                    $res['is_collected'] = 1;
+                }
+            }
+        }
+
         $this->_json['data'] = $res;
         util::toJson($this->_json);
     }
