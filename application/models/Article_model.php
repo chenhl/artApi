@@ -71,6 +71,8 @@ class Article_model extends Base_model {
         if (!empty($return['tags'])) {
             $return['tags'] = json_decode($return['tags'], TRUE);
         }
+        $return['upic'] = $this->imgurl($return['userpic']);
+        $return['u_url'] = $this->author_url($return['uid']);
         return $return;
 //        return $this->mockDetail();
     }
