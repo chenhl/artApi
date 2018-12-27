@@ -77,8 +77,8 @@ class Collection_model extends Base_model {
     public function getList($condition, $page, $pageSize) {
         $param = array();
         $where = ' c.uid=:userid';
-        $param[':userid'] = $condition['uid'];
-
+//        $param[':userid'] = $condition['uid'];
+        $param[':userid'] = 1;//test
         $return = array();
         //统计最多关注 1000个;
         $query = 'select count(aid) as total from ' . $this->table . ' as c '
