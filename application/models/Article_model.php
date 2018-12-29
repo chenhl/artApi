@@ -23,7 +23,7 @@ class Article_model extends Base_model {
      * @param type $condition
      * @return type
      */
-    public function etl_article($condition = array()) {
+    public function etl_article($condition = array(), $page = 0, $page_size = 0) {
 
         $where = ' n.status=99 ';
         $param = array();
@@ -31,11 +31,18 @@ class Article_model extends Base_model {
             $where .= ' and n.update_time>=:date_time';
             $param[':date_time'] = $condition['date_time'];
         }
-        
+
         if (!empty($condition['id'])) {
             $where .= ' and n.id=:id';
             $param[':id'] = $condition['id'];
         }
+
+        if ($page && $page_size) {
+            $limit = ' limit ' . ($page - 1) * $page_size . ',' . $page_size;
+        } else {
+            $limit = '';
+        }
+
 //        $fields_n = 'n.id,n.aid,n.uid,n.uname,n.userpic,n.collect_num,n.like_num,n.comment_num,n.status,n.catid,n.title,n.thumb,n.thumbs,n.keywords,n.tags,n.description,n.create_time,n.update_time,';
         $fields_n = 'n.*,';
         $query = 'select ' . $fields_n
@@ -44,7 +51,7 @@ class Article_model extends Base_model {
                 . ' from v9_news as n'
                 . ' left join v9_news_data as d on n.id=d.id'
                 . ' left join v9_member as m on n.uname=m.nickname'
-                . ' where ' . $where;
+                . ' where ' . $where . $limit;
         $db = $this->db->conn_id->prepare($query);
         $db->execute($param);
         $return = $db->fetchAll(PDO::FETCH_ASSOC);
@@ -84,17 +91,17 @@ class Article_model extends Base_model {
   "ud": 7669697,
   "uname": "authorName",
   "upic": "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/43feefdab91d46f2802c10d1f6102e71.jpeg",
-  "title": "刚刚！云南省级机构改革首批6部门挂牌成立！",
-  "mobile_title": "刚刚！云南省级机构改革首批6部门挂牌成立！",
+  "title": "ab",
+  "mobile_title": "ab！",
   "tags": [
     {
       "id": 19031,
-      "name": "艺术家"
+      "name": "tag"
     }
   ],
   "cate_id": "111",
   "cate_name": "news",
-  "content": "刚刚！云南省级机构改革首批6部门挂牌成立！刚刚！云南省级机构改革首批6部门挂牌成立！刚刚！云南省级机构改革首批6部门挂牌成立！刚刚！云南省级机构改革首批6部门挂牌成立！刚刚！云南省级机构改革首批6部门挂牌成立！",
+  "content": "aff",
   "create_time": "2018-10-24 10:11:13"
 }';
         $return = json_decode($data, TRUE);
