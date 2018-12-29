@@ -24,7 +24,7 @@ class Base_model extends CI_Model {
 
     protected function conDB($base = 'default', $return = FALSE) {
         $this->load->database($base, $return);
-        //不使用CI框架自带的连接方式时，设置编码格式
+        //设置编码格式
         $this->db->query("SET NAMES 'UTF8'");
     }
 

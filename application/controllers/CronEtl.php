@@ -18,6 +18,8 @@ class CronEtl extends Base_Controller {
     private $exhibit_meta = array();
     private $gallery_meta = array();
     private $xml_dir = '';
+    private $xml_file_pre = '';
+    private $page_size = 5000;
 
     public function __construct() {
         parent::__construct();
@@ -40,37 +42,76 @@ class CronEtl extends Base_Controller {
     /**
      * 全量更新
      */
-    public function full_import() {
+    public function full_import($page_size = 0) {
         $this->_init();
-        //文章
-//        $condition = array('id' => 854);
+        if ($page_size) {
+            $this->page_size = $page_size;
+        }
+        $this->xml_file_pre = $this->xml_dir . 'full_import_';
         $condition = array();
-        $_data = $this->article_model->etl_article($condition);
-//        print_r($_data);
-        //机构（）
-
-        $data = $this->_parseData($_data, 'news');
-        $this->_parse2addxml($data);
+        $page = 1;
+        
+        $start_time = microtime(TRUE);
+        $data = $this->article_model->etl_article($condition, $page, $this->page_size);
+        $newLine = PHP_SAPI == 'cli' ? "\n" : '<br />';
+        $i = 0;
+        foreach ($data as $row) {
+//            var_dump($row);
+            echo $row['id'] . $newLine;
+            $i++;
+        }
+        $end_time = microtime(TRUE);
+        echo "消耗内存：" . (memory_get_usage() / 1024 / 1024) . "M" . $newLine;
+        echo "时间：" . ($end_time - $start_time) . $newLine;
+        echo "处理数据行数：" . $i . $newLine;
+        echo "success";
+//        $this->_import($condition, $page);
     }
 
     /**
-     * 增量更新 (监听news表)
-     * @param type $domain
+     * 增量更新 
+     * @param type $date_time
      */
-    public function delta_import($date_time) {
+    public function delta_import($date_time, $page_size = 0) {
         $this->_init();
+        if ($page_size) {
+            $this->page_size = $page_size;
+        }
+        $this->xml_file_pre = $this->xml_dir . 'delta_import_';
+        
 //        $date_time = date('Y-m-d H:i:s',$_date_time);
         echo "param time:" . $date_time . "\n";
         $date_time = date('Y-m-d H:i:s', strtotime($date_time) - 60);
         echo "sql time:" . $date_time . "\n";
+        
+        $condition = array('date_time' => $date_time);
+        $this->_import($condition);
+    }
 
-        //增量
-        $conditon = array('date_time' => $date_time);
-        $_data = $this->article_model->etl_article($conditon);
-
-        //解析生成xml
-        $data = $this->_parseData($_data);
-        $this->_parse2addxml($data, TRUE);
+    private function _import($param) {
+        $condition = array();
+        if ($param['date_time']) {
+            $condition['date_time'] = $param['date_time'];
+        }
+        $page = 1;
+        //总量
+        $total = $this->article_model->etl_article_count($condition);
+        do {
+            //分页
+            $_data = $this->article_model->etl_article($condition, $page, $this->page_size);
+//        print_r($_data);
+            $data = $this->_parseData($_data, 'news');
+            $this->_parse2addxml($data, $page);
+            //下一步循环
+            if ($page * $this->page_size < $total) {
+                $page++;
+                $next = TRUE;
+            } else {
+                $next = FALSE;
+            }
+            //test
+//            $next = FALSE;
+        } while ($next);
     }
 
     /**
@@ -158,11 +199,9 @@ class CronEtl extends Base_Controller {
             'title',
             'keywords',
             'content',
-            
             'attr_s_address',
             'attr_s_consultation',
             'attr_s_msg',
-            
         );
     }
 
@@ -170,13 +209,10 @@ class CronEtl extends Base_Controller {
      * 生成到xml格式
      * @param type $data
      */
-    private function _parse2addxml(&$data, $delta = false) {
+    private function _parse2addxml(&$data, $page = 1) {
         $_xmldatakey = $this->_xmldatakey();
-        if ($delta) {
-            $file = $this->xml_dir . '/delta_import.xml';
-        } else {
-            $file = $this->xml_dir . '/full_import.xml';
-        }
+        $file = $this->xml_file_pre . $page . '.xml';
+
         $xml = "<add>\t\n";
         foreach ($data as $row) {
             $xml .= "<doc>\t\t\n";
@@ -271,7 +307,6 @@ class CronEtl extends Base_Controller {
         }
         return $return;
     }
-    
 
     /**
      * 解析 gallery attr (spider时已处理好key)
