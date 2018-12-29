@@ -71,12 +71,10 @@ class Article_model extends Base_model {
         if ($type == 'list') {
             $fields = 'n.*,'
                     . 'd.content,d.content_search,'
-                    . 'm.nickname,m.username,m.userid,m.userpic as m_userpic '
-            ;
+                    . 'm.nickname,m.username,m.userid,m.userpic as m_userpic ';
         } else {
             $fields = 'count(n.id) as total ';
         }
-        
 
         $query = 'select ' . $fields
                 . ' from v9_news as n'
@@ -84,15 +82,21 @@ class Article_model extends Base_model {
                 . ' left join v9_member as m on n.uname=m.nickname'
                 . ' where ' . $where . $limit;
 //        $start_time = microtime(TRUE);
-        //游标+yield生成器
-        $this->db->conn_id->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
-        //perpare里的游标属性不是必须的
-        $db = $this->db->conn_id->prepare($query, array(PDO::ATTR_CURSOR => PDO::CURSOR_SCROLL));
-        $db->execute($param);
-        while ($row = $db->fetch(PDO::FETCH_ASSOC)) {
-            yield $row;
+        if ($type == 'list') {
+            //游标+yield生成器
+            $this->db->conn_id->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+            //perpare里的游标属性不是必须的
+            $db = $this->db->conn_id->prepare($query, array(PDO::ATTR_CURSOR => PDO::CURSOR_SCROLL));
+            $db->execute($param);
+            while ($row = $db->fetch(PDO::FETCH_ASSOC)) {
+                yield $row;
+            }
+        } else {
+            $db = $this->db->conn_id->prepare($query);
+            $db->execute($param);
+            $return = $db->fetchAll(PDO::FETCH_ASSOC);
+            return $return;
         }
-        
         //test
 //        $newLine = PHP_SAPI == 'cli' ? "\n" : '<br />';
 //        $i = 0;
@@ -106,7 +110,6 @@ class Article_model extends Base_model {
 //        echo "时间：" . ($end_time - $start_time) . $newLine;
 //        echo "处理数据行数：" . $i . $newLine;
 //        echo "success";
-        
         //一次全取
 //        $db = $this->db->conn_id->prepare($query);
 //        $db->execute($param);
@@ -116,7 +119,6 @@ class Article_model extends Base_model {
 //        echo "时间：".($end_time-$start_time) . $newLine;
 //        echo "处理数据行数：" . count($return) . $newLine;
 //        echo "success";
-        
 //        $return = $db->fetchAll(PDO::FETCH_ASSOC);
 //        return $return;
     }

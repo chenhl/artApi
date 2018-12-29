@@ -78,7 +78,6 @@ class CronEtl extends Base_Controller {
             $this->page_size = $page_size;
         }
         $this->xml_file_pre = $this->xml_dir . 'delta_import_';
-        
 //        $date_time = date('Y-m-d H:i:s',$_date_time);
         echo "param time:" . $date_time . "\n";
         $date_time = date('Y-m-d H:i:s', strtotime($date_time) - 60);
