@@ -36,7 +36,8 @@ class About extends Base_Controller {
         }
 
         $condition = array();
-        $res = $this->article_model->getList($condition);
+        $condition['catid'] = $post['catid'];
+        $res = $this->article_model->aboutArticle($condition);
         $this->_json['data'] = $res;
         echo util::toJson($this->_json);
     }

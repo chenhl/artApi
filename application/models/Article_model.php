@@ -156,7 +156,7 @@ class Article_model extends Base_model {
     }
 
     public function aboutCate($condition) {
-        $where = ' c.type=1 and parentid!=0';
+        $where = ' c.type=1 and c.parentid!=0';
         $param = array();
         if (!empty($condition['catid'])) {
             $where .= ' and c.catid=:catid';
@@ -178,7 +178,21 @@ class Article_model extends Base_model {
         return $return;
     }
     
-    public function aboutArticle($param) {
+    public function aboutArticle($condition) {
         
+        $param = array();
+        if (!empty($condition['catid'])) {
+            $where = ' p.catid=:catid';
+            $param[':catid'] = $condition['catid'];
+        }
+        
+        $query = 'select catid,title,content,keywords '
+                . ' from v9_page as p'
+                . ' where ' . $where;
+        $db = $this->db->conn_id->prepare($query);
+        $db->execute($param);
+        $return = $db->fetch(PDO::FETCH_ASSOC);
+        
+        return $return;
     }
 }
