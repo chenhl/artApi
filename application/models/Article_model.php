@@ -155,29 +155,30 @@ class Article_model extends Base_model {
 //        return $this->mockDetail();
     }
 
-    private function mockDetail() {
-
-        $data = '{
-  "aid": 6093075,
-  "ud": 7669697,
-  "uname": "authorName",
-  "upic": "//5b0988e595225.cdn.sohucs.com/c_fill,w_150,h_100,g_faces,q_70/images/20181010/43feefdab91d46f2802c10d1f6102e71.jpeg",
-  "title": "ab",
-  "mobile_title": "ab！",
-  "tags": [
-    {
-      "id": 19031,
-      "name": "tag"
-    }
-  ],
-  "cate_id": "111",
-  "cate_name": "news",
-  "content": "aff",
-  "create_time": "2018-10-24 10:11:13"
-}';
-        $return = json_decode($data, TRUE);
+    public function aboutCate($condition) {
+        $where = ' c.type=1 and parentid!=0';
+        $param = array();
+        if (!empty($condition['catid'])) {
+            $where .= ' and c.catid=:catid';
+            $param[':catid'] = $condition['catid'];
+        }
+        
+        $query = 'select catid,catname,catdir '
+                . ' from v9_category as c'
+                . ' where ' . $where;
+        $db = $this->db->conn_id->prepare($query);
+        $db->execute($param);
+        $return = $db->fetchAll(PDO::FETCH_ASSOC);
+        
+        if (!empty($return)) {
+            foreach ($return as $key=>$row) {
+                $return[$key]['url'] = '/'.$row['catdir'];
+            }
+        }
         return $return;
-//        return array(json_decode($data, TRUE));
     }
-
+    
+    public function aboutArticle($param) {
+        
+    }
 }
