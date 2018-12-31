@@ -58,7 +58,7 @@ class Site_model extends Base_model {
         $param = array();
         $where = ' s.siteid=:siteid';
         $param[':siteid'] = 1;
-        $fields_n = 's.*';
+        $fields_n = 's.name,s.domain,s.site_title,s.keywords,s.description';
         $query = 'select ' . $fields_n
                 . ' from v9_site as s'
                 . ' where ' . $where;
@@ -66,6 +66,11 @@ class Site_model extends Base_model {
         $db->execute($param);
         $return = $db->fetch(PDO::FETCH_ASSOC);
         
+        $return['icp']='';//备案号
+        $return['report']=''; //违法和不良信息举报
+        $return['company_name']='';//公司名称
+        $return['license'] = '';//网络文化经营许可证
+        $return['self_discipline'] = '';//跟帖评论自律管理承诺书
         return $return;
     }
 
