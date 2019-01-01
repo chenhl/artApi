@@ -19,14 +19,27 @@ class CronEtl extends Base_Controller {
     private $gallery_meta = array();
     private $xml_dir = '';
     private $xml_file_pre = '';
+
+    /**
+     * 数据库查询分页
+     * 游标+yeild
+     * @var type 
+     */
     private $page_size = 5000;
+
+    /**
+     * 
+     * 写入xml文件分页
+     * @var type 
+     */
+    private $sub_page_size = 500;
 
     public function __construct() {
         parent::__construct();
         if (!is_cli()) {
             exit;
         }
-        $this->load->model(array('article_model', 'category_model'));
+        $this->load->model(array('article_model', 'category_model', 'channel_model'));
         $this->xml_dir = $_SERVER['SOLR_XML_PATH'];
     }
 
@@ -50,7 +63,7 @@ class CronEtl extends Base_Controller {
         $this->xml_file_pre = $this->xml_dir . 'full_import_';
         $condition = array();
         $page = 1;
-        
+
         $start_time = microtime(TRUE);
         $data = $this->article_model->etl_article($condition, $page, $this->page_size);
         $newLine = PHP_SAPI == 'cli' ? "\n" : '<br />';
@@ -82,7 +95,7 @@ class CronEtl extends Base_Controller {
         echo "param time:" . $date_time . "\n";
         $date_time = date('Y-m-d H:i:s', strtotime($date_time) - 60);
         echo "sql time:" . $date_time . "\n";
-        
+
         $condition = array('date_time' => $date_time);
         $this->_import($condition);
     }
@@ -98,9 +111,36 @@ class CronEtl extends Base_Controller {
         do {
             //分页
             $_data = $this->article_model->etl_article($condition, $page, $this->page_size);
+
+            $i = 0;
+//            $_data_num = count($_data);
+            foreach ($_data as $row) {
+                
+                if($i==0){
+                    $new_file = TRUE;
+                }else{
+                    $new_file = FALSE;
+                }
+                
+                $j = $i % $this->sub_page_size;
+                if ($j == 0) {
+                    $sub_data = array();
+                }
+                for ($k = 0; $k < $this->sub_page_size; $k++) {
+                    $sub_data[$k] = $row;
+                }
+                $i++;
+                
+                $m = $i % $this->sub_page_size;
+                if ($m == 0) {
+                    $data = $this->_parseData($sub_data);
+                    $this->_parse2addxml($data, $page,$new_file);
+                }
+            }
 //        print_r($_data);
-            $data = $this->_parseData($_data, 'news');
-            $this->_parse2addxml($data, $page);
+//            $data = $this->_parseData($_data);
+//            $this->_parse2addxml($data, $page);
+
             //下一步循环
             if ($page * $this->page_size < $total) {
                 $page++;
@@ -115,14 +155,16 @@ class CronEtl extends Base_Controller {
 
     /**
      * 取所有的三级分类
-     * @param type $domain
+     * 
      * @return type
      */
     private function _getCate() {
         $data = $this->category_model->getList();
+        $cate_channel = $this->channel_model->cateChannel();
         $return = array();
         if ($data) {
             foreach ($data as $row) {
+                $row['channel'] = isset($cate_channel[$row['catid']]) ? $cate_channel[$row['catid']] : '';
                 $return[$row['catid']] = $row;
             }
         }
@@ -143,7 +185,7 @@ class CronEtl extends Base_Controller {
      * 解析数据库来的数据到solr可用的字段
      * @param type $data
      */
-    private function _parseData(&$data, $channel) {
+    private function _parseData(&$data) {
         if (empty($data)) {
             return array();
         }
@@ -151,6 +193,7 @@ class CronEtl extends Base_Controller {
         $return = array();
         foreach ($data as $row) {
             $_temp = array();
+            $channel = $this->cate_info[$row['catid']]['channel'];
             $_temp['id'] = $channel . '-' . $row['id'];
             $_temp['aid'] = $row['aid'];
             $_temp['status'] = $row['status'];
@@ -208,11 +251,20 @@ class CronEtl extends Base_Controller {
      * 生成到xml格式
      * @param type $data
      */
-    private function _parse2addxml(&$data, $page = 1) {
+    private function _parse2addxml(&$data, $page = 1, $new_file = false) {
         $_xmldatakey = $this->_xmldatakey();
         $file = $this->xml_file_pre . $page . '.xml';
+        if ($new_file) {
+            file_put_contents($file, "");
+            $xml_start = "<add>\t\n";
+            $xml_end = "</add>\t\n";
+        } else {
+            $xml_start = "";
+            $xml_end = "";
+        }
 
-        $xml = "<add>\t\n";
+
+        $xml = $xml_start;
         foreach ($data as $row) {
             $xml .= "<doc>\t\t\n";
             foreach ($row as $key => $value) {
@@ -231,8 +283,9 @@ class CronEtl extends Base_Controller {
             }
             $xml .= "</doc>\t\n";
         }
-        $xml .= "</add>\t\n";
-        file_put_contents($file, $xml);
+        $xml .= $xml_end;
+        file_put_contents($file, $xml, TRUE);
+
         echo $file . " finish\n";
     }
 

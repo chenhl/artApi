@@ -31,11 +31,21 @@ class Channel_model extends Base_model {
             array('id' => 2, 'name' => '人物', 'code' => 'artist'),
             array('id' => 3, 'name' => '展览', 'code' => 'exhibit'),
             array('id' => 4, 'name' => '画廊', 'code' => 'gallery'),
-            array('id' => 5, 'name' => '院校', 'code' => 'edu'),
+//            array('id' => 5, 'name' => '院校', 'code' => 'edu'),
         );
         return $return;
     }
 
+    public function cateChannel() {
+        
+        $cate_channel = array(
+          6=>'news',
+          9=>'artist',
+          10=>'exhibit',
+          11=>'gallery',  
+        );
+        return $cate_channel;
+    }
     
 
 }
