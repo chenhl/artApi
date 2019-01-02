@@ -108,49 +108,60 @@ class CronEtl extends Base_Controller {
         $page = 1;
         //总量
         $total = $this->article_model->etl_article_count($condition);
+        if (empty($total)) {
+            echo 'count:0';
+            exit;
+        }
+        $max_page=0;
+        $max_sub_page=0;
         do {
-            //分页
-            $_data = $this->article_model->etl_article($condition, $page, $this->page_size);
-            $i = 0;
-            $_data_num = count($_data);
-            foreach ($_data as $row) {
-//                echo $row['title']."\n";
-                if ($i == 0) {
-                    $new_file = TRUE;
-                } else {
-                    $new_file = FALSE;
-                }
-                $data = $this->_parseData(array($row));
-                $this->_parse2addxml($data, $page, $new_file);
-                $i++;
-//                $j = $i % $this->sub_page_size;
-//                if ($j == 0) {//新的分组开始
-//                    $sub_data = array();
-//                }
-//                for ($k = 0; $k < $this->sub_page_size; $k++) {
-//                    $sub_data[$k] = $row;
-//                    $i++;
-////                    continue;
-//                    $m = $i % $this->sub_page_size;
-//                    if ($m == 0 || $i == $_data_num) {//分组结束 写入数据
-//                        $data = $this->_parseData($sub_data);
-//                        $this->_parse2addxml($data, $page, $new_file);
-//                    }else{
-//                        continue;
-//                    }
-//                }
-//                print_r($sub_data);
-            }
-//        print_r($_data);
-//            $data = $this->_parseData($_data);
-//            $this->_parse2addxml($data, $page);
+
+            $file = $this->xml_file_pre . $page . '.xml';
+            file_put_contents($file, "<add>\t\n", LOCK_EX);
             //下一步循环
             if ($page * $this->page_size < $total) {
                 $page++;
                 $next = TRUE;
+                $_data_num = $this->sub_page_size;
             } else {
+                
+                $_data_num = $this->sub_page_size;
                 $next = FALSE;
             }
+            
+            //分页
+//            $this->page_size=2;
+            $_data = $this->article_model->etl_article($condition, $page, $this->page_size);
+            $i = 0;
+//            $_data_num = ;
+            foreach ($_data as $row) {
+//                echo $row['title']."\n";
+//                exit;
+//                $data = $this->_parseData(array($row));
+//                $this->_parse2addxml($data, $file);
+//                $i++;
+                $j = $i % $this->sub_page_size;
+                if ($j == 0) {//新的分组开始
+                    $sub_data = array();
+                    $sub_data[$j] = $row;
+                } else {
+                    $sub_data[$j] = $row;
+                }
+                $i++;
+
+                $m = $i % $this->sub_page_size;
+                if ($m == 0 || $i == $_data_num) {//分组结束 写入数据
+                    $data = $this->_parseData($sub_data);
+                    $this->_parse2addxml($data, $file);
+                    if ($i == $_data_num) {
+                        file_put_contents($file, "</add>\t\n", FILE_APPEND | LOCK_EX);
+                    }
+                }
+            }
+//        print_r($_data);
+//            $data = $this->_parseData($_data);
+//            $this->_parse2addxml($data, $page);
+            
             //test
 //            $next = FALSE;
         } while ($next);
@@ -254,20 +265,9 @@ class CronEtl extends Base_Controller {
      * 生成到xml格式
      * @param type $data
      */
-    private function _parse2addxml(&$data, $page = 1, $new_file = false) {
+    private function _parse2addxml(&$data, $file) {
         $_xmldatakey = $this->_xmldatakey();
-        $file = $this->xml_file_pre . $page . '.xml';
-        if ($new_file) {
-            file_put_contents($file, "");
-            $xml_start = "<add>\t\n";
-            $xml_end = "</add>\t\n";
-            echo $file . ' start :' . date('Y-m-d H:i:s') . "\n";
-        } else {
-            $xml_start = "";
-            $xml_end = "";
-        }
-
-        $xml = $xml_start;
+        $xml = '';
         foreach ($data as $row) {
             $xml .= "<doc>\t\t\n";
             foreach ($row as $key => $value) {
@@ -286,8 +286,8 @@ class CronEtl extends Base_Controller {
             }
             $xml .= "</doc>\t\n";
         }
-        $xml .= $xml_end;
-        file_put_contents($file, $xml,  FILE_APPEND | LOCK_EX);
+
+        file_put_contents($file, $xml, FILE_APPEND | LOCK_EX);
 
 //        echo $file . " finish\n";
     }
@@ -374,7 +374,11 @@ class CronEtl extends Base_Controller {
             if (json_last_error() == JSON_ERROR_NONE) {
                 foreach ($spider_attr as $_key => $_val) {
                     if ($_key == 'area') {//area string
-                        $_temp['area_province'] = trim($_val[0]);
+                        if (isset($_val[0])) {
+                            $_temp['area_province'] = trim($_val[0]);
+                        }else{
+                            $_temp['area_province'] = '';
+                        }
                         if (isset($_val[1])) {
                             $_temp['area_city'] = trim($_val[1]);
                         } else {
@@ -420,8 +424,10 @@ class CronEtl extends Base_Controller {
                     }
                     if ($_attr['code'] == 'times') {//times string
                         $_arr = explode(' - ', $_val);
-                        $_temp['start_time'] = date("Y-m-d\TH:i:s\Z", strtotime(trim($_arr[0])));
-                        $_temp['end_time'] = date("Y-m-d\TH:i:s\Z", strtotime(trim($_arr[1])));
+                        if (isset($_arr[1])) {
+                            $_temp['start_time'] = date("Y-m-d\TH:i:s\Z", strtotime(trim($_arr[0])));
+                            $_temp['end_time'] = date("Y-m-d\TH:i:s\Z", strtotime(trim($_arr[1])));
+                        }
                     } elseif ($_attr['code'] == 'open_time') {//open_time string
                         $_temp['open_time'] = date("Y-m-d\TH:i:s\Z", strtotime($_val));
                     } elseif ($_attr['code'] == 'area') {//area string
