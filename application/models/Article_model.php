@@ -26,8 +26,16 @@ class Article_model extends Base_model {
      * @return type
      */
     public function etl_article($condition = array(), $page = 0, $page_size = 0) {
-        $data = $this->_etl_article($condition, $page, $page_size, 'list');
-        return $data;
+//        $this->_etl_article($condition, $page, $page_size, 'list');
+        $sql = $this->_etl_article_sql($condition, $page, $page_size, 'list');
+
+        $this->db->conn_id->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+        //perpare里的游标属性不是必须的
+        $db = $this->db->conn_id->prepare($sql['sql'], array(PDO::ATTR_CURSOR => PDO::CURSOR_SCROLL));
+        $db->execute($sql['param']);
+        while ($row = $db->fetch(PDO::FETCH_ASSOC)) {
+            yield $row;
+        }
     }
 
     /**
@@ -36,20 +44,25 @@ class Article_model extends Base_model {
      * @return type
      */
     public function etl_article_count($condition = array()) {
-        $data = $this->_etl_article($condition);
+//        $data = $this->_etl_article($condition, 0, 0, 'count');
+        $sql = $this->_etl_article_sql($condition, 1, 1, 'count');
+        $db = $this->db->conn_id->prepare($sql['sql']);
+        $db->execute($sql['param']);
+        $data = $db->fetchAll(PDO::FETCH_ASSOC);
+//        print_r($data);
         return $data[0]['total'];
     }
 
     /**
-     * 文章列表sql
+     * 文章列表
+     * 要么yeild 要么return 不能同存
      * @param type $condition
      * @param type $page
      * @param type $page_size
      * @param type $type
      * @return type
      */
-    public function _etl_article($condition = array(), $page = 0, $page_size = 0, $type = 'list') {
-
+    private function _etl_article($condition, $page, $page_size, $type) {
         $where = ' n.status=99 ';
         $param = array();
         if (!empty($condition['date_time'])) {
@@ -82,21 +95,20 @@ class Article_model extends Base_model {
                 . ' left join v9_member as m on n.uname=m.nickname'
                 . ' where ' . $where . $limit;
 //        $start_time = microtime(TRUE);
-        if ($type == 'list') {
-            //游标+yield生成器
-            $this->db->conn_id->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
-            //perpare里的游标属性不是必须的
-            $db = $this->db->conn_id->prepare($query, array(PDO::ATTR_CURSOR => PDO::CURSOR_SCROLL));
-            $db->execute($param);
-            while ($row = $db->fetch(PDO::FETCH_ASSOC)) {
-                yield $row;
-            }
-        } else {
-            $db = $this->db->conn_id->prepare($query);
-            $db->execute($param);
-            $return = $db->fetchAll(PDO::FETCH_ASSOC);
-            return $return;
+//            echo $query;exit;
+        //游标+yield生成器
+        $this->db->conn_id->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+        //perpare里的游标属性不是必须的
+        $db = $this->db->conn_id->prepare($query, array(PDO::ATTR_CURSOR => PDO::CURSOR_SCROLL));
+        $db->execute($param);
+        while ($row = $db->fetch(PDO::FETCH_ASSOC)) {
+            yield $row;
         }
+
+//            $db = $this->db->conn_id->prepare($query);
+//            $db->execute($param);
+//            $return = $db->fetchAll(PDO::FETCH_ASSOC);
+//            return $return;
         //test
 //        $newLine = PHP_SAPI == 'cli' ? "\n" : '<br />';
 //        $i = 0;
@@ -121,6 +133,41 @@ class Article_model extends Base_model {
 //        echo "success";
 //        $return = $db->fetchAll(PDO::FETCH_ASSOC);
 //        return $return;
+    }
+
+    private function _etl_article_sql($condition, $page, $page_size, $type) {
+        $where = ' n.status=99 ';
+        $param = array();
+        if (!empty($condition['date_time'])) {
+            $where .= ' and n.update_time>=:date_time';
+            $param[':date_time'] = $condition['date_time'];
+        }
+
+        if (!empty($condition['id'])) {
+            $where .= ' and n.id=:id';
+            $param[':id'] = $condition['id'];
+        }
+
+        if ($page && $page_size) {
+            $limit = ' limit ' . ($page - 1) * $page_size . ',' . $page_size;
+        } else {
+            $limit = '';
+        }
+//        $fields_n = 'n.id,n.aid,n.uid,n.uname,n.userpic,n.collect_num,n.like_num,n.comment_num,n.status,n.catid,n.title,n.thumb,n.thumbs,n.keywords,n.tags,n.description,n.create_time,n.update_time,';
+        if ($type == 'list') {
+            $fields = 'n.*,'
+                    . 'd.content,d.content_search,'
+                    . 'm.nickname,m.username,m.userid,m.userpic as m_userpic ';
+        } else {
+            $fields = 'count(n.id) as total ';
+        }
+
+        $query = 'select ' . $fields
+                . ' from v9_news as n'
+                . ' left join v9_news_data as d on n.id=d.id'
+                . ' left join v9_member as m on n.uname=m.nickname'
+                . ' where ' . $where . $limit;
+        return array('sql' => $query, 'param' => $param);
     }
 
     private function cursor($sth) {
@@ -162,37 +209,38 @@ class Article_model extends Base_model {
             $where .= ' and c.catid=:catid';
             $param[':catid'] = $condition['catid'];
         }
-        
+
         $query = 'select catid,catname,catdir '
                 . ' from v9_category as c'
                 . ' where ' . $where;
         $db = $this->db->conn_id->prepare($query);
         $db->execute($param);
         $return = $db->fetchAll(PDO::FETCH_ASSOC);
-        
+
         if (!empty($return)) {
-            foreach ($return as $key=>$row) {
-                $return[$key]['url'] = '/'.$row['catdir'];
+            foreach ($return as $key => $row) {
+                $return[$key]['url'] = '/' . $row['catdir'];
             }
         }
         return $return;
     }
-    
+
     public function aboutArticle($condition) {
-        
+
         $param = array();
         if (!empty($condition['catid'])) {
             $where = ' p.catid=:catid';
             $param[':catid'] = $condition['catid'];
         }
-        
+
         $query = 'select catid,title,content,keywords '
                 . ' from v9_page as p'
                 . ' where ' . $where;
         $db = $this->db->conn_id->prepare($query);
         $db->execute($param);
         $return = $db->fetch(PDO::FETCH_ASSOC);
-        
+
         return $return;
     }
+
 }
