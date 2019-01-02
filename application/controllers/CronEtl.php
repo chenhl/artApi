@@ -112,34 +112,19 @@ class CronEtl extends Base_Controller {
             echo 'count:0';
             exit;
         }
-        $max_page=0;
-        $max_sub_page=0;
-        do {
+        $max_sub_page = $this->page_size / $this->sub_page_size;
 
+        do {
             $file = $this->xml_file_pre . $page . '.xml';
+            echo $file . ' start :' . date('Y-m-d H:i:s') . "\n";
             file_put_contents($file, "<add>\t\n", LOCK_EX);
-            //下一步循环
-            if ($page * $this->page_size < $total) {
-                $page++;
-                $next = TRUE;
-                $_data_num = $this->sub_page_size;
-            } else {
-                
-                $_data_num = $this->sub_page_size;
-                $next = FALSE;
-            }
-            
             //分页
 //            $this->page_size=2;
             $_data = $this->article_model->etl_article($condition, $page, $this->page_size);
             $i = 0;
+            $sub_page = 0;
 //            $_data_num = ;
             foreach ($_data as $row) {
-//                echo $row['title']."\n";
-//                exit;
-//                $data = $this->_parseData(array($row));
-//                $this->_parse2addxml($data, $file);
-//                $i++;
                 $j = $i % $this->sub_page_size;
                 if ($j == 0) {//新的分组开始
                     $sub_data = array();
@@ -150,18 +135,38 @@ class CronEtl extends Base_Controller {
                 $i++;
 
                 $m = $i % $this->sub_page_size;
-                if ($m == 0 || $i == $_data_num) {//分组结束 写入数据
+                if ($m == 0) {//分组结束 写入数据
+                    $sub_page++;
                     $data = $this->_parseData($sub_data);
                     $this->_parse2addxml($data, $file);
-                    if ($i == $_data_num) {
+                    if ($sub_page == $max_sub_page) {
                         file_put_contents($file, "</add>\t\n", FILE_APPEND | LOCK_EX);
                     }
+                    $is_write = true;
+                } else {
+                    $is_write = FALSE;
                 }
             }
+
+            if (!$is_write) {
+                $data = $this->_parseData($sub_data);
+                $this->_parse2addxml($data, $file);
+                file_put_contents($file, "</add>\t\n", FILE_APPEND | LOCK_EX);
+                $next = FALSE;
+            } else {
+                $page++;
+                $next = TRUE;
+            }
+            //下一步循环
+//            if ($page * $this->page_size < $total) {
+//                $page++;
+//                $next = TRUE;
+//            } else {
+//                $next = FALSE;
+//            }
 //        print_r($_data);
 //            $data = $this->_parseData($_data);
 //            $this->_parse2addxml($data, $page);
-            
             //test
 //            $next = FALSE;
         } while ($next);
@@ -376,7 +381,7 @@ class CronEtl extends Base_Controller {
                     if ($_key == 'area') {//area string
                         if (isset($_val[0])) {
                             $_temp['area_province'] = trim($_val[0]);
-                        }else{
+                        } else {
                             $_temp['area_province'] = '';
                         }
                         if (isset($_val[1])) {
