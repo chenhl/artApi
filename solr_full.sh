@@ -16,7 +16,7 @@
     log_file=${ETL_LOG_DIR}"/solr-full.log"
 
     xml_dir=${SOLR_XML_DIR}
-    xml_file_pre=${xml_dir}"full_import_"
+    xml_file_pre=${xml_dir}"/full_import_"
     
     #生成xml 
     echo `date` : begin etl php  |tee -a $log_file
