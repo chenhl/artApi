@@ -1,22 +1,21 @@
 #!/bin/bash
 #{  win下先关闭
-    echo full begin `date` ============================================================
-    starttime=`date  +'%Y-%m-%d_%H:%M:%S'`
     #锁 win下先关闭
 #    flock -n 30
 
     [ $? -eq 1 ] && { echo fail; exit; }
     echo $$
+    log_file=${ETL_LOG_DIR}"/solr-full.log"
+    xml_dir=${SOLR_XML_DIR}
+    xml_file_pre=${xml_dir}"/full_import_"
 
     #环境变量
 #    env_base_dir="/usr/local/sbin/"
 #    env=$env_base_dir"cron/"$domain
 #    source "$env"
 
-    log_file=${ETL_LOG_DIR}"/solr-full.log"
-
-    xml_dir=${SOLR_XML_DIR}
-    xml_file_pre=${xml_dir}"/full_import_"
+    echo full begin `date` ============================================================|tee -a $log_file
+    starttime=`date  +'%Y-%m-%d_%H:%M:%S'`
     
     #生成xml 
     echo `date` : begin etl php  |tee -a $log_file
