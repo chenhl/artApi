@@ -105,7 +105,6 @@ class CronEtl extends Base_Controller {
         $newLine = PHP_SAPI == 'cli' ? "\n" : '<br />';
 
         $condition = array();
-        $condition['id'] = 999999999;
         if (!empty($param['date_time'])) {
             $condition['date_time'] = $param['date_time'];
         }
