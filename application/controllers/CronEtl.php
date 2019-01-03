@@ -60,7 +60,7 @@ class CronEtl extends Base_Controller {
         if ($page_size) {
             $this->page_size = $page_size;
         }
-        $this->xml_file_pre = $this->xml_dir . 'full_import_';
+        $this->xml_file_pre = $this->xml_dir . '/full_import_';
         $condition = array();
         $this->_import($condition);
 
@@ -90,7 +90,7 @@ class CronEtl extends Base_Controller {
         if ($page_size) {
             $this->page_size = $page_size;
         }
-        $this->xml_file_pre = $this->xml_dir . 'delta_import_';
+        $this->xml_file_pre = $this->xml_dir . '/delta_import_';
 //        $date_time = date('Y-m-d H:i:s',$_date_time);
         echo "param time:" . $date_time . "\n";
         $date_time = date('Y-m-d H:i:s', strtotime($date_time) - 60);
@@ -101,19 +101,24 @@ class CronEtl extends Base_Controller {
     }
 
     private function _import($param) {
+        $start_time = microtime(TRUE);
+        $newLine = PHP_SAPI == 'cli' ? "\n" : '<br />';
+
         $condition = array();
+        $condition['id'] = 999999999;
         if (!empty($param['date_time'])) {
             $condition['date_time'] = $param['date_time'];
         }
         $page = 1;
-        //总量
-        $total = $this->article_model->etl_article_count($condition);
-        if (empty($total)) {
-            echo 'count:0';
-            exit;
-        }
+        //总量 基于cursor+yield 不需要统计总量
+//        $total = $this->article_model->etl_article_count($condition);
+//        if (empty($total)) {
+//            echo 'count:0';
+//            exit;
+//        }
+        //要求整数
         $max_sub_page = $this->page_size / $this->sub_page_size;
-
+        $last_num = 0;
         do {
             $file = $this->xml_file_pre . $page . '.xml';
             echo $file . ' start :' . date('Y-m-d H:i:s') . "\n";
@@ -121,9 +126,13 @@ class CronEtl extends Base_Controller {
             //分页
 //            $this->page_size=2;
             $_data = $this->article_model->etl_article($condition, $page, $this->page_size);
+            //item计数
             $i = 0;
+            //buffer分组 计数
             $sub_page = 0;
-//            $_data_num = ;
+            //标识是完完整的分组写入数据
+            $is_write = FALSE;
+
             foreach ($_data as $row) {
                 $j = $i % $this->sub_page_size;
                 if ($j == 0) {//新的分组开始
@@ -137,11 +146,14 @@ class CronEtl extends Base_Controller {
                 $m = $i % $this->sub_page_size;
                 if ($m == 0) {//分组结束 写入数据
                     $sub_page++;
-                    $data = $this->_parseData($sub_data);
-                    $this->_parse2addxml($data, $file);
+                    if (!empty($sub_data)) {
+                        $data = $this->_parseData($sub_data);
+                        $this->_parse2addxml($data, $file);
+                    }
                     if ($sub_page == $max_sub_page) {
                         file_put_contents($file, "</add>\t\n", FILE_APPEND | LOCK_EX);
                     }
+
                     $is_write = true;
                 } else {
                     $is_write = FALSE;
@@ -149,10 +161,13 @@ class CronEtl extends Base_Controller {
             }
 
             if (!$is_write) {
-                $data = $this->_parseData($sub_data);
-                $this->_parse2addxml($data, $file);
+                if (!empty($sub_data)) {
+                    $data = $this->_parseData($sub_data);
+                    $this->_parse2addxml($data, $file);
+                }
                 file_put_contents($file, "</add>\t\n", FILE_APPEND | LOCK_EX);
                 $next = FALSE;
+                $last_num = $i;
             } else {
                 $page++;
                 $next = TRUE;
@@ -170,6 +185,11 @@ class CronEtl extends Base_Controller {
             //test
 //            $next = FALSE;
         } while ($next);
+        $end_time = microtime(TRUE);
+        echo "消耗内存：" . (memory_get_usage() / 1024 / 1024) . "M" . $newLine;
+        echo "时间：" . ($end_time - $start_time) . $newLine;
+        echo "处理数据页数：" . $page . $newLine;
+        echo "未页行数：" . $last_num . $newLine;
     }
 
     /**
