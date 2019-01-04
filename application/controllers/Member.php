@@ -12,7 +12,7 @@ class Member extends Base_Controller {
     }
 
     /**
-     * 登录
+     * 登录 入库
      */
     public function auth() {
         $post = $this->input->post();
@@ -28,4 +28,7 @@ class Member extends Base_Controller {
         echo util::toJson($this->_json);
     }
     
+    public function getUserInfo() {
+        
+    }
 }

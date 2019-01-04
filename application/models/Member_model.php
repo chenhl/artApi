@@ -87,7 +87,7 @@ class Member_model extends Base_model {
                 . ' and fuid=' . intval($data['fuid']);
         return $this->query($sql);
     }
-
+############################登录相关
     /**
      * 注册
      * @param type $data
@@ -201,4 +201,10 @@ class Member_model extends Base_model {
         return $this->pdo_insert($insert_data, 'v9_member');
     }
 
+    public function getUserInfo($param){
+        
+    }
+    
+    
+##########################登录相关    
 }
