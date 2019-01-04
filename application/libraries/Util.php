@@ -34,6 +34,20 @@ class Util {
     }
 
     /**
+     * 生成用户id
+     * php.ini 下 precision = 14
+     * 见http://php.net/precision
+     * 
+     */
+    public static function genUid() {
+        //15 34500514
+        //15 43886241
+        $t = microtime(TRUE) - 1500000000;
+        $arr = explode('.', $t);
+        return ($arr[0] + $arr[1]);
+    }
+
+    /**
      * 设置加密的密码
      * @param str $pwd 待加密的密码
      * @param str $key 密钥

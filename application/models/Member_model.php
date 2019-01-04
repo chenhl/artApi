@@ -87,12 +87,14 @@ class Member_model extends Base_model {
                 . ' and fuid=' . intval($data['fuid']);
         return $this->query($sql);
     }
+
 ############################登录相关
     /**
      * 注册
      * @param type $data
      * @return type
      */
+
     public function doReg($data) {
 
         $where = " m.islock=0 ";
@@ -154,18 +156,7 @@ class Member_model extends Base_model {
     public function doAuth($data) {
 
         //判断用户是否存在
-        $param = array();
-        if (is_numeric($data['login_name'])) {
-            $where = ' m.mobile=:login_name';
-        } else {
-            $where = ' m.email=:login_name';
-        }
-        $param[':login_name'] = $data['login_name'];
-
-        $query = 'select * from v9_member as m where ' . $where;
-        $db = $this->db->conn_id->prepare($query);
-        $db->execute($param);
-        $userInfo = $db->fetch(PDO::FETCH_ASSOC);
+        $userInfo = $this->_getUserInfo($data);
 
         if (!empty($userInfo)) {
             //存在，登录
@@ -188,23 +179,49 @@ class Member_model extends Base_model {
      * @param type $param
      */
     private function _formatAuth($param) {
+        $return = array();
+        $return['uid'] = Util::genUid(); //todo并发不是太大时可唯一
+        $return['m_uid'] = md5($return['uid']);
 
-        return $param;
+        $return['email'] = $param['email'];
+
+        return $return;
     }
+
     /**
      * 入库member
      * @param type $data
-     * @return type
+     * @return array 用户基本信息，可供登录用
      */
     private function _insert_member($data) {
         $insert_data = $this->_formatAuth($data);
-        return $this->pdo_insert($insert_data, 'v9_member');
+        $userid = $this->pdo_insert($insert_data, 'v9_member');
+        $insert_data['userid'] = $userid;
+        return $insert_data;
     }
 
-    public function getUserInfo($param){
+    private function _getUserInfo($data) {
+        $param = array();
+        if (is_numeric($data['login_name'])) {
+            $where = ' m.mobile=:login_name';
+        } else {
+            $where = ' m.email=:login_name';
+        }
+        $param[':login_name'] = $data['login_name'];
+
+        $query = 'select * from v9_member as m where ' . $where;
+        $db = $this->db->conn_id->prepare($query);
+        $db->execute($param);
+        $userInfo = $db->fetch(PDO::FETCH_ASSOC);
+        return $userInfo;
+    }
+
+    public function getUserInfo($m_uid) {
+        
+        $userInfo = $this->_getUserInfo(array('m_uid'=>$m_uid));
+        return $userInfo;
         
     }
-    
-    
+
 ##########################登录相关    
 }
