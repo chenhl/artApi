@@ -20,21 +20,35 @@ class Member_model extends Base_model {
         $this->conDB();
     }
 
+    public function getFansList($condition, $page, $pageSize) {
+        return $this->_getList($condition, $page, $pageSize, 'fans');
+    }
+
+    private function getFollowList($condition, $page, $pageSize) {
+        return $this->_getList($condition, $page, $pageSize, 'follow');
+    }
+
     /**
      * 我的关注列表
      * @param type $condition
      * @param type $page
      * @param type $pageSize
      */
-    public function getFollowList($condition, $page, $pageSize) {
+    public function _getList($condition, $page, $pageSize, $type = 'follow') {
         $param = array();
-        $where = ' f.uid=:userid';
-        $param[':userid'] = $condition['uid'];
-
+        if ($type == 'follow') {
+            $where = ' f.uid=:userid';
+            $param[':userid'] = $condition['uid'];
+            $join = ' left join v9_member as m on f.fuid = m.userid';
+        } else {//type==fans
+            $where = ' f.fuid=:userid';
+            $param[':userid'] = $condition['uid'];
+            $join = ' left join v9_member as m on f.uid = m.userid';
+        }
         $return = array();
         //统计最多关注 400个;
 
-        $query = 'select count(fuid) as total from art_follow as f '
+        $query = 'select count(id) as total from art_follow as f '
                 . 'where' . $where;
         $db = $this->db->conn_id->prepare($query);
         $db->execute($param);
@@ -50,16 +64,51 @@ class Member_model extends Base_model {
         if ($this->follow_max && $start > $this->follow_max) {
             $return['list'] = array();
         } else {
-            $where .= ' m.islock=0 ';
+//            $where .= ' m.islock=0 ';
             $limit = 'limit ' . $start . ',' . $pageSize;
-            $fields = 'm.userid as uid,m.nickname as uname,m.userpic as upic';
+            $fields = 'f.is_friend,1 as relation_status,m.userid as uid,m.nickname as uname,m.userpic as upic';
             $query = 'select ' . $fields
                     . ' from art_follow as f'
-                    . ' left join v9_member as m on m.userid=f.fuid'
+                    . $join
                     . ' where ' . $where . $limit;
             $db = $this->db->conn_id->prepare($query);
             $db->execute($param);
-            $return['list'] = $db->fetchAll(PDO::FETCH_ASSOC);
+//            
+            $list = $db->fetchAll(PDO::FETCH_ASSOC);
+            $return['list'] = array();
+            if ($list) {
+                if ($type == 'follow') {
+                    foreach ($list as $row) {
+                        if ($row['is_friend']) {//相互
+                            $row['is_followed'] = TRUE;
+                            $row['is_following'] = TRUE;
+                            $row['relation_status'] = 2;
+                        } else {//已关注
+                            $row['is_followed'] = FALSE;
+                            $row['is_following'] = TRUE;
+                            $row['relation_status'] = 1;
+                        }
+                        $row['u_url'] = $this->author_url($row['uid']);
+                        $row['upic'] = $this->imgurl($row['upic']);
+                        $return['list'][] = $row;
+                    }
+                } else {
+                    foreach ($list as $row) {
+                        if ($row['is_friend']) {//相互
+                            $row['is_followed'] = TRUE;
+                            $row['is_following'] = TRUE;
+                            $row['relation_status'] = 2;
+                        } else {//关注
+                            $row['is_followed'] = FALSE;
+                            $row['is_following'] = FALSE;
+                            $row['relation_status'] = 0;
+                        }
+                        $row['u_url'] = $this->author_url($row['uid']);
+                        $row['upic'] = $this->imgurl($row['upic']);
+                        $return['list'][] = $row;
+                    }
+                }
+            }
         }
 
         return $return;
@@ -70,12 +119,37 @@ class Member_model extends Base_model {
      * @param type $data
      */
     public function addFollow($data) {
-
         $insert_data = array();
         $insert_data['uid'] = $data['uid'];
         $insert_data['fuid'] = $data['fuid'];
         $insert_data['create_time'] = Util::genHttpDateTime();
-        return $this->pdo_insert($data, 'art_follow');
+        //查询uid是否被关注
+        $fo = $this->getOneFollow($data['fuid'], $data['uid']);
+        if ($fo) {
+            $insert_data['is_friend'] = 1;
+            try {
+                $this->begin_transaction();
+                $id = $this->pdo_insert($data, 'art_follow');
+                //更新friend
+                $update = array(
+                    'is_friend' => 1,
+                );
+                $whe = array(
+                    'id' => $fo['id'],
+//                    'uid' => $insert_data['fuid'],
+//                    'fuid' => $insert_data['uid'],
+                );
+                $this->pdo_update($whe, $update, 'art_follow');
+                $this->begin_commit();
+            } catch (Exception $exc) {
+                $this->begin_back();
+//                echo $exc->getTraceAsString();
+                return FALSE;
+            }
+        } else {
+            $id = $this->pdo_insert($data, 'art_follow');
+        }
+        return $id;
     }
 
     /**
@@ -83,9 +157,51 @@ class Member_model extends Base_model {
      * @param type $data
      */
     public function cancelFollow($data) {
-        $sql = 'delete from art_follow where uid = ' . intval($data['uid'])
-                . ' and fuid=' . intval($data['fuid']);
-        return $this->query($sql);
+        //查询uid是否被关注
+        $fo = $this->getOneFollow($data['fuid'], $data['uid']);
+        if ($fo) {
+            try {
+                $this->begin_transaction();
+                //删除
+                $sql = 'delete from art_follow where uid = ' . intval($data['uid'])
+                        . ' and fuid=' . intval($data['fuid']);
+                $res = $this->query($sql);
+                //更新friend
+                $update = array(
+                    'is_friend' => 0,
+                );
+                $whe = array(
+                    'id' => $fo['id'],
+                );
+                $this->pdo_update($whe, $update, 'art_follow');
+
+                $this->begin_commit();
+            } catch (Exception $exc) {
+                $this->begin_back();
+                return FALSE;
+            }
+        } else {
+            $sql = 'delete from art_follow where uid = ' . intval($data['uid'])
+                    . ' and fuid=' . intval($data['fuid']);
+            $res = $this->query($sql);
+        }
+
+        return $res;
+    }
+
+    private function getOneFollow($uid, $fuid) {
+        $param = array();
+        $where = ' f.uid=:uid';
+        $param[':uid'] = $uid;
+        $where .= ' and f.fuid=:fuid';
+        $param[':fuid'] = $fuid;
+
+        $query = 'select id '
+                . ' from art_follow as f'
+                . ' where ' . $where . ' limit 1';
+        $db = $this->db->conn_id->prepare($query);
+        $db->execute($param);
+        return $db->fetch(PDO::FETCH_ASSOC);
     }
 
 ############################登录相关
@@ -217,10 +333,9 @@ class Member_model extends Base_model {
     }
 
     public function getUserInfo($m_uid) {
-        
-        $userInfo = $this->_getUserInfo(array('m_uid'=>$m_uid));
+
+        $userInfo = $this->_getUserInfo(array('m_uid' => $m_uid));
         return $userInfo;
-        
     }
 
 ##########################登录相关    

@@ -77,9 +77,54 @@ class Base_model extends CI_Model {
     }
 
     /**
+     * pdo 更新表信息
+     * @param array $fields 更新的字段
+     * @param array $whereData 更新条件
+     * @return int
+     */
+    protected function pdo_update($fields, $whereData, $table) {
+        if (empty($fields) || empty($whereData)) {
+            return array();
+        }
+        $whereStr = $str_fields = '';
+        $sqlWhere = array();
+        foreach ($fields as $field => $val) {
+            if (isset($val)) {
+                $str_fields .= ",`" . $field . "`=:f" . $field;
+                $sqlWhere[":f" . $field] = $val;
+            }
+        }
+        foreach ($whereData as $field => $val) {
+            if (isset($val)) {
+                if (is_array($val)) {
+                    $arr = array();
+                    foreach ($val as $k => $v) {
+                        $arr[] = ":f_{$k}";
+                        $sqlWhere[":f_{$k}"] = $v;
+                    }
+                    $whereStr .= ' AND `' . $field . '` IN (' . implode(',', $arr) . ')';
+                } else {
+                    $whereStr .= " AND " . $field . "=:" . $field;
+                    $sqlWhere[":" . $field] = $val;
+                }
+            }
+        }
+        //更新SQL
+        $query = "UPDATE " . $table . " SET " . trim($str_fields, ',') . " WHERE " . trim($whereStr, ' AND');
+//        echo $query;
+        //执行更改
+        $db = $this->db->conn_id->prepare($query);
+        if ($row = $db->execute($sqlWhere)) {
+            return $row;
+        } else {
+            return FALSE;
+        }
+    }
+
+    /**
      * PDO 开启事务
      */
-    public function begin_transaction() {
+    protected function begin_transaction() {
         // 关闭 PDO 的自动提交
 //        $this->db->conn_id->setAttribute(PDO::ATTR_AUTOCOMMIT, false);
         // 开启异常处理
@@ -91,14 +136,14 @@ class Base_model extends CI_Model {
     /**
      * PDO 事务提交
      */
-    public function begin_commit() {
+    protected function begin_commit() {
         $this->db->conn_id->commit();
     }
 
     /**
      * PDO 事务回滚
      */
-    public function begin_back() {
+    protected function begin_back() {
         $this->db->conn_id->rollBack();
     }
 
@@ -147,14 +192,15 @@ class Base_model extends CI_Model {
      * @return type
      */
     protected function imgurl($img) {
-        return $_SERVER['IMG_HOST1'] .'/'. $img;
+        return $_SERVER['IMG_HOST1'] . '/' . $img;
     }
-    
+
     protected function article_url($aid) {
-        return '/a/'. $aid;
+        return '/a/' . $aid;
     }
-    
+
     protected function author_url($uid) {
-        return '/u/'. $uid;
+        return '/u/' . $uid;
     }
+
 }
