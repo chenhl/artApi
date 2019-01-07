@@ -24,7 +24,7 @@ class Member_model extends Base_model {
         return $this->_getList($condition, $page, $pageSize, 'fans');
     }
 
-    private function getFollowList($condition, $page, $pageSize) {
+    public function getFollowList($condition, $page, $pageSize) {
         return $this->_getList($condition, $page, $pageSize, 'follow');
     }
 
@@ -34,16 +34,16 @@ class Member_model extends Base_model {
      * @param type $page
      * @param type $pageSize
      */
-    public function _getList($condition, $page, $pageSize, $type = 'follow') {
+    private function _getList($condition, $page, $pageSize, $type = 'follow') {
         $param = array();
         if ($type == 'follow') {
             $where = ' f.uid=:userid';
             $param[':userid'] = $condition['uid'];
-            $join = ' left join v9_member as m on f.fuid = m.userid';
+            $join = ' left join v9_member as m on f.fuid = m.uid';
         } else {//type==fans
             $where = ' f.fuid=:userid';
             $param[':userid'] = $condition['uid'];
-            $join = ' left join v9_member as m on f.uid = m.userid';
+            $join = ' left join v9_member as m on f.uid = m.uid';
         }
         $return = array();
         //统计最多关注 400个;
@@ -65,8 +65,8 @@ class Member_model extends Base_model {
             $return['list'] = array();
         } else {
 //            $where .= ' m.islock=0 ';
-            $limit = 'limit ' . $start . ',' . $pageSize;
-            $fields = 'f.is_friend,1 as relation_status,m.userid as uid,m.nickname as uname,m.userpic as upic';
+            $limit = ' limit ' . $start . ',' . $pageSize;
+            $fields = 'f.is_friend,m.uid as uid,m.nickname as uname,m.userpic as upic';
             $query = 'select ' . $fields
                     . ' from art_follow as f'
                     . $join
@@ -75,6 +75,8 @@ class Member_model extends Base_model {
             $db->execute($param);
 //            
             $list = $db->fetchAll(PDO::FETCH_ASSOC);
+//            echo $query;
+//            print_r($list);
             $return['list'] = array();
             if ($list) {
                 if ($type == 'follow') {
