@@ -66,7 +66,7 @@ class Member_model extends Base_model {
         } else {
 //            $where .= ' m.islock=0 ';
             $limit = ' limit ' . $start . ',' . $pageSize;
-            $fields = 'f.is_friend,m.uid as uid,m.nickname as uname,m.userpic as upic';
+            $fields = 'f.is_friend,m.uid as uid,m.nickname as uname,m.description,m.userpic as upic';
             $query = 'select ' . $fields
                     . ' from art_follow as f'
                     . $join
